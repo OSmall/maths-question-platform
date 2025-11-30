@@ -15,7 +15,8 @@
     "start": "cross-env NODE_OPTIONS=--no-deprecation bun --bun next start",
     "test": "bun run test:int && bun run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" bunx playwright test --config=playwright.config.ts",
-    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts"
+    "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
+    "ci:build": "payload migrate && bun run build"
   },
   "dependencies": {
     "@payloadcms/next": "3.65.0",
