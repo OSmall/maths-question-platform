@@ -167,7 +167,7 @@ export interface Media {
  */
 export interface Question {
   id: number;
-  question_rich_text?: {
+  questionRichText?: {
     root: {
       type: string;
       children: {
@@ -182,20 +182,33 @@ export interface Question {
     };
     [k: string]: unknown;
   } | null;
-  answer_mechanism?:
-    | {
-        options?:
-          | {
-              text: string;
-              is_correct?: boolean | null;
-              id?: string | null;
-            }[]
-          | null;
-        shuffle?: boolean | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'mcq';
-      }[]
+  answerMechanism?:
+    | (
+        | {
+            answers?:
+              | {
+                  answer: string;
+                  isCorrect?: boolean | null;
+                  id?: string | null;
+                }[]
+              | null;
+            shuffle?: boolean | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'multipleChoice';
+          }
+        | {
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'selfReport';
+          }
+        | {
+            correctAnswer?: string | null;
+            id?: string | null;
+            blockName?: string | null;
+            blockType: 'freeTextValidation';
+          }
+      )[]
     | null;
   updatedAt: string;
   createdAt: string;
@@ -323,21 +336,34 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "question_select".
  */
 export interface QuestionSelect<T extends boolean = true> {
-  question_rich_text?: T;
-  answer_mechanism?:
+  questionRichText?: T;
+  answerMechanism?:
     | T
     | {
-        mcq?:
+        multipleChoice?:
           | T
           | {
-              options?:
+              answers?:
                 | T
                 | {
-                    text?: T;
+                    answer?: T;
                     isCorrect?: T;
                     id?: T;
                   };
               shuffle?: T;
+              id?: T;
+              blockName?: T;
+            };
+        selfReport?:
+          | T
+          | {
+              id?: T;
+              blockName?: T;
+            };
+        freeTextValidation?:
+          | T
+          | {
+              correctAnswer?: T;
               id?: T;
               blockName?: T;
             };
