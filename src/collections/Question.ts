@@ -9,13 +9,21 @@ export const Question: CollectionConfig = {
     {
       name: 'questionRichText',
       type: 'richText',
+      required: true,
     },
     {
       name: 'answerMechanism',
       type: 'blocks',
+      required: true,
       minRows: 1,
       maxRows: 1,
       blocks: [multipleChoiceBlock, selfReportBlock, freeTextValidationBlock],
+    },
+    {
+      name: 'aspects',
+      type: 'relationship',
+      relationTo: 'aspect',
+      hasMany: true,
     },
   ],
 }

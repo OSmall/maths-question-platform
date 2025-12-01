@@ -70,6 +70,7 @@ export interface Config {
     users: User;
     media: Media;
     question: Question;
+    aspect: Aspect;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,6 +81,7 @@ export interface Config {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
     question: QuestionSelect<false> | QuestionSelect<true>;
+    aspect: AspectSelect<false> | AspectSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -167,7 +169,7 @@ export interface Media {
  */
 export interface Question {
   id: number;
-  questionRichText?: {
+  questionRichText: {
     root: {
       type: string;
       children: {
@@ -181,35 +183,44 @@ export interface Question {
       version: number;
     };
     [k: string]: unknown;
-  } | null;
-  answerMechanism?:
-    | (
-        | {
-            answers?:
-              | {
-                  answer: string;
-                  isCorrect?: boolean | null;
-                  id?: string | null;
-                }[]
-              | null;
-            shuffle?: boolean | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'multipleChoice';
-          }
-        | {
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'selfReport';
-          }
-        | {
-            correctAnswer?: string | null;
-            id?: string | null;
-            blockName?: string | null;
-            blockType: 'freeTextValidation';
-          }
-      )[]
-    | null;
+  };
+  answerMechanism: (
+    | {
+        answers?:
+          | {
+              answer: string;
+              isCorrect?: boolean | null;
+              id?: string | null;
+            }[]
+          | null;
+        shuffle?: boolean | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'multipleChoice';
+      }
+    | {
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'selfReport';
+      }
+    | {
+        correctAnswer?: string | null;
+        id?: string | null;
+        blockName?: string | null;
+        blockType: 'freeTextValidation';
+      }
+  )[];
+  aspects?: (number | Aspect)[] | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "aspect".
+ */
+export interface Aspect {
+  id: number;
+  name: string;
   updatedAt: string;
   createdAt: string;
 }
@@ -248,6 +259,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'question';
         value: number | Question;
+      } | null)
+    | ({
+        relationTo: 'aspect';
+        value: number | Aspect;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -368,6 +383,16 @@ export interface QuestionSelect<T extends boolean = true> {
               blockName?: T;
             };
       };
+  aspects?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "aspect_select".
+ */
+export interface AspectSelect<T extends boolean = true> {
+  name?: T;
   updatedAt?: T;
   createdAt?: T;
 }
