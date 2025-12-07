@@ -169,7 +169,10 @@ export interface Media {
  */
 export interface Question {
   id: number;
-  questionRichText: {
+  /**
+   * The overall question or context for the question. This will be displayed above the parts of the question.
+   */
+  overallQuestionRichText: {
     root: {
       type: string;
       children: {
@@ -184,32 +187,59 @@ export interface Question {
     };
     [k: string]: unknown;
   };
-  answerMechanism: (
-    | {
-        answers?:
-          | {
-              answer: string;
-              isCorrect?: boolean | null;
-              id?: string | null;
-            }[]
-          | null;
-        shuffle?: boolean | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'multipleChoice';
-      }
-    | {
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'selfReport';
-      }
-    | {
-        correctAnswer?: string | null;
-        id?: string | null;
-        blockName?: string | null;
-        blockType: 'freeTextValidation';
-      }
-  )[];
+  /**
+   * The parts of the question can be subquestions or just a single part for questions with no subquestions.
+   */
+  parts: {
+    /**
+     * The rich text for just this part of the question. Leave this blank if this is a question with no subquestions. Don't include the subquestion identifier e.g. "ii." or "b)".
+     */
+    partRichText?: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    } | null;
+    /**
+     * The sort of input that is received for this part of the question.
+     */
+    answerMechanism: (
+      | {
+          answers?:
+            | {
+                answer: string;
+                isCorrect?: boolean | null;
+                id?: string | null;
+              }[]
+            | null;
+          shuffle?: boolean | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'multipleChoice';
+        }
+      | {
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'selfReport';
+        }
+      | {
+          correctAnswer?: string | null;
+          id?: string | null;
+          blockName?: string | null;
+          blockType: 'freeTextValidation';
+        }
+    )[];
+    id?: string | null;
+  }[];
   aspects?: (number | Aspect)[] | null;
   updatedAt: string;
   createdAt: string;
@@ -351,37 +381,43 @@ export interface MediaSelect<T extends boolean = true> {
  * via the `definition` "question_select".
  */
 export interface QuestionSelect<T extends boolean = true> {
-  questionRichText?: T;
-  answerMechanism?:
+  overallQuestionRichText?: T;
+  parts?:
     | T
     | {
-        multipleChoice?:
+        partRichText?: T;
+        answerMechanism?:
           | T
           | {
-              answers?:
+              multipleChoice?:
                 | T
                 | {
-                    answer?: T;
-                    isCorrect?: T;
+                    answers?:
+                      | T
+                      | {
+                          answer?: T;
+                          isCorrect?: T;
+                          id?: T;
+                        };
+                    shuffle?: T;
                     id?: T;
+                    blockName?: T;
                   };
-              shuffle?: T;
-              id?: T;
-              blockName?: T;
+              selfReport?:
+                | T
+                | {
+                    id?: T;
+                    blockName?: T;
+                  };
+              freeTextValidation?:
+                | T
+                | {
+                    correctAnswer?: T;
+                    id?: T;
+                    blockName?: T;
+                  };
             };
-        selfReport?:
-          | T
-          | {
-              id?: T;
-              blockName?: T;
-            };
-        freeTextValidation?:
-          | T
-          | {
-              correctAnswer?: T;
-              id?: T;
-              blockName?: T;
-            };
+        id?: T;
       };
   aspects?: T;
   updatedAt?: T;

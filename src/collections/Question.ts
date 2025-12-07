@@ -7,17 +7,46 @@ export const Question: CollectionConfig = {
   slug: 'question',
   fields: [
     {
-      name: 'questionRichText',
+      name: 'overallQuestionRichText',
+      label: 'Overall Question/Context',
       type: 'richText',
+      admin: {
+        description:
+          'The overall question or context for the question. This will be displayed above the parts of the question.',
+      },
       required: true,
     },
     {
-      name: 'answerMechanism',
-      type: 'blocks',
+      name: 'parts',
+      type: 'array',
+      admin: {
+        description:
+          'The parts of the question can be subquestions or just a single part for questions with no subquestions.',
+      },
       required: true,
       minRows: 1,
-      maxRows: 1,
-      blocks: [multipleChoiceBlock, selfReportBlock, freeTextValidationBlock],
+      fields: [
+        {
+          name: 'partRichText',
+          label: 'Question Part Text',
+          type: 'richText',
+          admin: {
+            description:
+              'The rich text for just this part of the question. Leave this blank if this is a question with no subquestions. Don\'t include the subquestion identifier e.g. "ii." or "b)".',
+          },
+        },
+        {
+          name: 'answerMechanism',
+          type: 'blocks',
+          admin: {
+            description: 'The sort of input that is received for this part of the question.',
+          },
+          required: true,
+          minRows: 1,
+          maxRows: 1,
+          blocks: [multipleChoiceBlock, selfReportBlock, freeTextValidationBlock],
+        },
+      ],
     },
     {
       name: 'aspects',
