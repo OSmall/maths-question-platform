@@ -214,14 +214,12 @@ export interface Question {
      */
     answerMechanism: (
       | {
-          answers?:
-            | {
-                answer: string;
-                isCorrect?: boolean | null;
-                id?: string | null;
-              }[]
-            | null;
-          shuffle?: boolean | null;
+          answers: {
+            answer: string;
+            isCorrect: boolean;
+            id?: string | null;
+          }[];
+          shuffle: boolean;
           id?: string | null;
           blockName?: string | null;
           blockType: 'multipleChoice';
@@ -238,13 +236,45 @@ export interface Question {
           blockType: 'freeTextValidation';
         }
     )[];
+    /**
+     * The various worked solution methods for this part of the question.
+     */
+    solutionMethods?:
+      | {
+          solutionRichText: {
+            root: {
+              type: string;
+              children: {
+                type: any;
+                version: number;
+                [k: string]: unknown;
+              }[];
+              direction: ('ltr' | 'rtl') | null;
+              format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+              indent: number;
+              version: number;
+            };
+            [k: string]: unknown;
+          };
+          /**
+           * If the solution requires knowledge of aspects from a different area of learning compared to the question, we want to record that here so we can filter them out if need be.
+           */
+          solutionAspects?: (number | Aspect)[] | null;
+          id?: string | null;
+        }[]
+      | null;
     id?: string | null;
   }[];
-  aspects?: (number | Aspect)[] | null;
+  /**
+   * The aspects that this question is testing. If the question has multiple parts, these aspects should cover all parts of the question.
+   */
+  questionAspects?: (number | Aspect)[] | null;
   updatedAt: string;
   createdAt: string;
 }
 /**
+ * Aspects are specific areas of learning and are the lowest level of categorisation of a question. They are often a suptopic on a syllabus.
+ *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "aspect".
  */
@@ -417,9 +447,16 @@ export interface QuestionSelect<T extends boolean = true> {
                     blockName?: T;
                   };
             };
+        solutionMethods?:
+          | T
+          | {
+              solutionRichText?: T;
+              solutionAspects?: T;
+              id?: T;
+            };
         id?: T;
       };
-  aspects?: T;
+  questionAspects?: T;
   updatedAt?: T;
   createdAt?: T;
 }

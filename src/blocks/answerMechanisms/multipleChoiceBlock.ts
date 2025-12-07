@@ -32,9 +32,16 @@ export const multipleChoiceBlock: Block = {
           name: 'isCorrect',
           type: 'checkbox',
           label: 'Correct Answer',
+          defaultValue: false,
+          required: true,
         },
       ],
     },
-    { name: 'shuffle', type: 'checkbox', defaultValue: true },
+    {
+      name: 'shuffle',
+      type: 'checkbox',
+      defaultValue: true,
+      required: true,
+    },
   ],
 }
