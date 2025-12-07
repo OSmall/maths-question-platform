@@ -12,6 +12,7 @@ export const multipleChoiceBlock: Block = {
       label: 'Answers',
       type: 'array',
       minRows: 1,
+      required: true,
       fields: [
         { name: 'answer', type: 'text', required: true },
         { name: 'isCorrect', type: 'checkbox', label: 'Correct Answer' },
