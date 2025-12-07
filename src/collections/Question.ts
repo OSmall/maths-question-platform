@@ -46,11 +46,37 @@ export const Question: CollectionConfig = {
           maxRows: 1,
           blocks: [multipleChoiceBlock, selfReportBlock, freeTextValidationBlock],
         },
+        {
+          name: 'solutionMethods',
+          type: 'array',
+          admin: {
+            description: 'The various worked solution methods for this part of the question.',
+          },
+          fields: [
+            {
+              name: 'solutionRichText',
+              type: 'richText',
+              required: true,
+            },
+            {
+              name: 'solutionAspects',
+              type: 'relationship',
+              admin: {
+                description: 'If the solution requires knowledge of aspects from a different area of learning compared to the question, we want to record that here so we can filter them out if need be.',
+              },
+              relationTo: 'aspect',
+              hasMany: true,
+            },
+          ],
+        },
       ],
     },
     {
-      name: 'aspects',
+      name: 'questionAspects',
       type: 'relationship',
+      admin: {
+        description: 'The aspects that this question is testing. If the question has multiple parts, these aspects should cover all parts of the question.',
+      },
       relationTo: 'aspect',
       hasMany: true,
     },
