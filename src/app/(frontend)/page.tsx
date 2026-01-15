@@ -1,11 +1,11 @@
 import { headers as getHeaders } from 'next/headers.js'
 import Image from 'next/image'
+import Link from 'next/link'
 import { getPayload } from 'payload'
-import React from 'react'
 import { fileURLToPath } from 'url'
 
 import config from '@/payload.config'
-import './styles.css'
+import { Button } from '@/components/ui/button'
 
 export default async function HomePage() {
   const headers = await getHeaders()
@@ -16,44 +16,49 @@ export default async function HomePage() {
   const fileURL = `vscode://file/${fileURLToPath(import.meta.url)}`
 
   return (
-    <div className="home">
-      <div className="content">
-        <picture>
-          <source srcSet="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg" />
-          <Image
-            alt="Payload Logo"
-            height={65}
-            src="https://raw.githubusercontent.com/payloadcms/payload/main/packages/ui/src/assets/payload-favicon.svg"
-            width={65}
-          />
-        </picture>
-        {!user && <h1>Welcome to your new project.</h1>}
-        {user && <h1>Welcome back, {user.email}</h1>}
-        <div className="links">
-          <a
-            className="admin"
-            href={payloadConfig.routes.admin}
-            rel="noopener noreferrer"
-            target="_blank"
+    <div className="flex flex-col items-center justify-between min-h-screen p-6 md:p-12 max-w-4xl mx-auto">
+      {/* Main Content */}
+      <div className="flex flex-col items-center justify-center grow">
+        <Image
+          alt="Payload Logo"
+          height={65}
+          width={65}
+          src="/payload-logo.svg"
+          className="dark:invert"
+        />
+        <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-center my-6 md:my-10">
+          {!user && 'Welcome to your new project.'}
+          {user && `Welcome back, ${user.email}`}
+        </h1>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="outline"
+            render={<Link href={payloadConfig.routes.admin} target="_blank" />}
+            nativeButton={false}
           >
             Go to admin panel
-          </a>
-          <a
-            className="docs"
-            href="https://payloadcms.com/docs"
-            rel="noopener noreferrer"
-            target="_blank"
+          </Button>
+          <Button
+            render={
+              <a href="https://payloadcms.com/docs" target="_blank" rel="noopener noreferrer" />
+            }
+            nativeButton={false}
           >
             Documentation
-          </a>
+          </Button>
         </div>
       </div>
-      <div className="footer">
+
+      {/* Footer */}
+      <footer className="flex flex-col sm:flex-row items-center gap-2 text-sm text-muted-foreground">
         <p>Update this page by editing</p>
-        <a className="codeLink" href={fileURL}>
+        <a
+          href={fileURL}
+          className="px-2 py-0.5 bg-muted rounded text-foreground font-mono text-sm hover:bg-muted/80 transition-colors"
+        >
           <code>app/(frontend)/page.tsx</code>
         </a>
-      </div>
+      </footer>
     </div>
   )
 }
