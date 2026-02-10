@@ -169,11 +169,10 @@ Do what is relevant to the change scope:
 
 ### Naming Conventions
 
-- Files: camelCase generally, PascalCase for Payload collections (e.g., `Question.ts`).
+- Files: kebab-case.
 - Components: PascalCase.
 - Variables/functions: camelCase.
-- Collections: PascalCase export, lowercase slug.
-- Blocks: camelCase export and slug.
+- Payload objects (Collections, Blocks): PascalCase export, kebab-case slug.
 
 ### Error Handling
 
@@ -253,16 +252,6 @@ metadata, error boundaries, route handlers, hydration/suspense issues, and bundl
 
 Use for React/Next performance work: eliminating waterfalls, reducing bundle size,
 server/client performance patterns, rerender optimization, and targeted refactors.
-
-## External Rule Files Status
-
-Checked in this repo:
-
-- `.cursorrules`: not present
-- `.cursor/rules/`: not present
-- `.github/copilot-instructions.md`: not present
-
-If these files are added later, merge their guidance into this document and keep this file concise.
 
 ## Keep This File Healthy
 

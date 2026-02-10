@@ -1,10 +1,22 @@
 import { CollectionConfig } from 'payload'
-import { multipleChoiceBlock } from '@/blocks/answerMechanisms/multipleChoiceBlock'
-import { selfReportBlock } from '@/blocks/answerMechanisms/selfReportBlock'
-import { freeTextValidationBlock } from '@/blocks/answerMechanisms/freeTextValidationBlock'
+import { multipleChoiceBlock } from '@/payload/blocks/answer-mechanism/multiple-choice-block'
+import { selfReportBlock } from '@/payload/blocks/answer-mechanism/self-report-block'
+import { freeTextValidationBlock } from '@/payload/blocks/answer-mechanism/free-text-validation-block'
 
 export const Question: CollectionConfig = {
   slug: 'question',
+  admin: {
+    livePreview: {
+      url: ({ data }) => `/question/${data.id}`,
+    },
+  },
+  versions: {
+    drafts: {
+      autosave: {
+        interval: 375,
+      },
+    },
+  },
   fields: [
     {
       name: 'overallQuestionRichText',
@@ -62,7 +74,8 @@ export const Question: CollectionConfig = {
               name: 'solutionAspects',
               type: 'relationship',
               admin: {
-                description: 'If the solution requires knowledge of aspects from a different area of learning compared to the question, we want to record that here so we can filter them out if need be.',
+                description:
+                  'If the solution requires knowledge of aspects from a different area of learning compared to the question, we want to record that here so we can filter them out if need be.',
               },
               relationTo: 'aspect',
               hasMany: true,
@@ -75,7 +88,8 @@ export const Question: CollectionConfig = {
       name: 'questionAspects',
       type: 'relationship',
       admin: {
-        description: 'The aspects that this question is testing. If the question has multiple parts, these aspects should cover all parts of the question.',
+        description:
+          'The aspects that this question is testing. If the question has multiple parts, these aspects should cover all parts of the question.',
       },
       relationTo: 'aspect',
       hasMany: true,

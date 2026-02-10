@@ -1,6 +1,6 @@
 import React from 'react'
 import '../globals.css'
-import { ThemeProvider } from '@/components/theme-provider'
+import { ThemeProvider } from '@/components/theme/theme-provider'
 
 export const metadata = {
   description: 'A blank template using Payload in a Next.js app.',

@@ -271,6 +271,7 @@ export interface Question {
   questionAspects?: (number | Aspect)[] | null;
   updatedAt: string;
   createdAt: string;
+  _status?: ('draft' | 'published') | null;
 }
 /**
  * Aspects are specific areas of learning and are the lowest level of categorisation of a question. They are often a suptopic on a syllabus.
@@ -459,6 +460,7 @@ export interface QuestionSelect<T extends boolean = true> {
   questionAspects?: T;
   updatedAt?: T;
   createdAt?: T;
+  _status?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

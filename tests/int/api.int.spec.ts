@@ -1,5 +1,5 @@
 import { getPayload, Payload } from 'payload'
-import config from '@/payload.config'
+import config from '@payload-config'
 
 import { describe, it, beforeAll, expect } from 'vitest'
 
@@ -18,3 +18,4 @@ describe('API', () => {
     expect(users).toBeDefined()
   })
 })
+

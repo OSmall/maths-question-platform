@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { getPayload } from 'payload'
 import { fileURLToPath } from 'url'
 
-import config from '@/payload.config'
+import config from '@payload-config'
 import { Button } from '@/components/ui/button'
 
 export default async function HomePage() {
@@ -62,3 +62,4 @@ export default async function HomePage() {
     </div>
   )
 }
+

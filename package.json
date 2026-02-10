@@ -8,6 +8,7 @@
     "build": "cross-env NODE_OPTIONS=--no-deprecation bun --bun next build",
     "dev": "cross-env NODE_OPTIONS=--no-deprecation bun --bun next dev",
     "dev:prod": "cross-env NODE_OPTIONS=--no-deprecation rm -rf .next && bun run --bun build && bun run --bun start",
+    "typecheck": "bun --bun tsc --noEmit",
     "generate:importmap": "cross-env NODE_OPTIONS=--no-deprecation payload generate:importmap",
     "generate:types": "cross-env NODE_OPTIONS=--no-deprecation payload generate:types",
     "lint": "cross-env NODE_OPTIONS=--no-deprecation bun --bun next lint",
@@ -16,11 +17,13 @@
     "test": "bun run test:int && bun run test:e2e",
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" bunx playwright test --config=playwright.config.ts",
     "test:int": "cross-env NODE_OPTIONS=--no-deprecation vitest run --config ./vitest.config.mts",
+    "migrate:create": "payload migrate:create",
     "ci:build": "payload migrate && bun run build"
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
     "@payloadcms/db-vercel-postgres": "3.65.0",
+    "@payloadcms/live-preview-react": "3.65.0",
     "@payloadcms/next": "3.65.0",
     "@payloadcms/richtext-lexical": "3.65.0",
     "@payloadcms/storage-vercel-blob": "3.65.0",
@@ -70,3 +73,4 @@
   },
   "packageManager": "bun"
 }
+
