@@ -7,33 +7,20 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 
 import { RichTextRenderer } from './rich-text-renderer'
-import { Question } from '@/payload/payload-types'
-
-type SimplifiedQuestionRendererProps = {
-  question: Question
-}
-
-type QuestionPart = Question['parts'][number]
-type MultipleChoiceAnswerMechanism = Extract<
-  QuestionPart['answerMechanism'][number],
-  { blockType: 'multipleChoice' }
->
+import { assertNever } from '@/lib/utils/types'
+import { MultipleChoiceAnswerMechanism, Question, QuestionPart } from '@/lib/domain/question'
 
 const renderMultipleChoice = (answerMechanism: MultipleChoiceAnswerMechanism) => {
   return (
     <RadioGroup>
-      {answerMechanism.answers.map((option) => {
-        const inputId = `${answerMechanism.id}-${option.id}`
-
+      {answerMechanism.choices.map((choice) => {
+        const key = `choice-${choice.id}`
         return (
-          <div
-            className="rounded-xl border border-border bg-background/60 px-3 py-2"
-            key={option.id}
-          >
+          <div className="rounded-xl border border-border bg-background/60 px-3 py-2" key={key}>
             <div className="flex items-center gap-3">
-              <RadioGroupItem id={inputId} value={option.id} />
-              <Label className="leading-normal" htmlFor={inputId}>
-                {option.answer}
+              <RadioGroupItem id={key} value={choice.id} />
+              <Label className="leading-normal" htmlFor={key}>
+                {choice.text}
               </Label>
             </div>
           </div>
@@ -61,42 +48,29 @@ const renderFreeText = () => {
 }
 
 const renderPartInput = (part: QuestionPart) => {
-  const answerMechanism = part.answerMechanism[0]
+  const answerMechanism = part.answerMechanism
 
   if (!answerMechanism) {
     return null
   }
 
-  switch (answerMechanism.blockType) {
+  switch (answerMechanism.type) {
     case 'multipleChoice':
       return renderMultipleChoice(answerMechanism)
     case 'selfReport':
       return renderSelfReport()
     case 'freeTextValidation':
       return renderFreeText()
-    default: {
-      const _exhaustiveCheck: never = answerMechanism
-      return null
-    }
+    default:
+      assertNever(answerMechanism)
   }
 }
 
-export const QuestionRenderer = ({ question }: SimplifiedQuestionRendererProps) => {
-  // if (question.parts.length === 0) {
-  //   return (
-  //     <Card className="w-full max-w-3xl">
-  //       <CardHeader>
-  //         <CardTitle>Question Preview Not Ready</CardTitle>
-  //       </CardHeader>
-  //       <CardContent>
-  //         <p className="text-muted-foreground text-sm">
-  //           This preview does not contain any question parts yet.
-  //         </p>
-  //       </CardContent>
-  //     </Card>
-  //   )
-  // }
+type QuestionRendererProps = {
+  question: Question
+}
 
+export const QuestionRenderer = ({ question }: QuestionRendererProps) => {
   return (
     <div className="w-full max-w-3xl space-y-6">
       <Card>
@@ -106,7 +80,7 @@ export const QuestionRenderer = ({ question }: SimplifiedQuestionRendererProps) 
           </div>
         </CardHeader>
         <CardContent className="space-y-3">
-          <RichTextRenderer data={question.overallQuestionRichText} />
+          {question.richText !== undefined && <RichTextRenderer data={question.richText} />}
         </CardContent>
       </Card>
 
@@ -117,9 +91,7 @@ export const QuestionRenderer = ({ question }: SimplifiedQuestionRendererProps) 
               <CardTitle>Part {index + 1}</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {part.partRichText !== null && part.partRichText !== undefined && (
-                <RichTextRenderer data={part.partRichText} />
-              )}
+              {part.richText !== undefined && <RichTextRenderer data={part.richText} />}
               {renderPartInput(part)}
             </CardContent>
           </Card>
@@ -128,4 +100,3 @@ export const QuestionRenderer = ({ question }: SimplifiedQuestionRendererProps) 
     </div>
   )
 }
-
