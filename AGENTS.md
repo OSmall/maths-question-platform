@@ -11,13 +11,17 @@ Favor concise, repo-specific guidance. If this file conflicts with generic model
 - Blob storage: Vercel Blob
 - Hosting: Vercel preview + production
 - Key paths:
-    - `src/app/(frontend)` public pages
-    - `src/app/(payload)` Payload admin routes
-    - `src/collections` Payload collection configs
-    - `src/blocks` Payload blocks
-    - `src/migrations` DB migrations
-    - `tests/int` Vitest integration tests
-    - `tests/e2e` Playwright e2e tests
+  - `src/app/(frontend)` public pages
+  - `src/app/(payload)` Payload admin routes
+  - `src/payload/collections` Payload collection configs
+  - `src/payload/blocks` Payload blocks
+  - `src/migrations` DB migrations
+  - `src/lib/service` service layer (orchestration + validation)
+  - `src/lib/repository` data-access layer
+  - `src/lib/data` CMS-to-domain mapping layer
+  - `src/lib/domain` CMS-independent domain types
+  - `tests/int` Vitest integration tests
+  - `tests/e2e` Playwright e2e tests
 
 ## Bun-First Policy (Mandatory)
 
@@ -46,7 +50,7 @@ Do not use:
 ### Command Mapping
 
 | Instead of                        | Use                 |
-|-----------------------------------|---------------------|
+| --------------------------------- | ------------------- |
 | `npm install`                     | `bun install`       |
 | `npm run dev`                     | `bun run dev`       |
 | `npx vitest`                      | `bunx vitest`       |
@@ -131,18 +135,26 @@ When implementing changes:
 5. Run relevant verification commands.
 6. Report what changed, where, and how to validate.
 
+### Data Access Architecture
+
+- For non-trivial features, follow this flow: page/route -> service -> repository. The repository will fetch from the
+backend and map to domain objects using mappers.
+- Keep Payload/CMS types out of UI-facing components; map to domain types before rendering.
+- In repositories, shape queries deliberately (`select`, minimal `depth`) and return mapped domain entities.
+- At route/page boundaries, translate domain errors into framework behavior (for example `notFound()`).
+
 ## Definition of Done (Practical)
 
 Do what is relevant to the change scope:
 
 - Always for meaningful code changes:
-    - `bun run lint`
-    - `bun run build`
+  - `bun run lint`
+  - `bun run build`
 - Backend/data/schema behavior changed:
-    - `bun run test:int`
+  - `bun run test:int`
 - UI/user-flow changed:
-    - `bun run test:e2e` (or explain why not feasible in current environment)
-- Never manually edit generated files (especially `src/payload-types.ts`).
+  - `bun run test:e2e` (or explain why not feasible in current environment)
+- Never manually edit generated files (especially `src/payload/payload-types.ts`).
 
 ## Code Style Guidelines
 
@@ -157,8 +169,8 @@ Do what is relevant to the change scope:
 - `strict` mode is enabled and should be respected.
 - Avoid `any` unless unavoidable; prefer explicit types and narrowing.
 - Use path aliases:
-    - `@/*` -> `src/*`
-    - `@payload-config` -> `src/payload.config.ts`
+  - `@/*` -> `src/*`
+  - `@payload-config` -> `src/payload/payload.config.ts`
 - Prefix intentionally unused vars/args with `_`.
 - Caught errors may use `_error` or `ignore*` prefixes.
 
@@ -177,6 +189,8 @@ Do what is relevant to the change scope:
 ### Error Handling
 
 - Use `try/catch` for async flows that can fail.
+- Prefer `neverthrow` (`Result` / `ResultAsync`) in service/repository flows where failure is expected and should be explicit.
+- Wrap unknown/third-party errors at boundaries into domain/app errors; do not leak raw `unknown` errors upward.
 - Add context when logging errors.
 - Re-throw when callers must handle failure.
 - Do not silently swallow errors unless explicitly intentional.
@@ -211,17 +225,17 @@ The following are currently warnings (not errors):
 - Prefer wrappers in `src/components/*` over modifying generated UI primitives.
 - Base UI uses `render` prop (not `asChild`).
 - In Server Components, prefer JSX element render pattern:
-    - `render={<Link href="/path" />}`
+  - `render={<Link href="/path" />}`
 - Use `nativeButton={false}` when rendering non-button elements through Button.
 
 ## Payload CMS Rules
 
-- Do not edit `src/payload-types.ts` directly.
+- Do not edit `src/payload/payload-types.ts` directly.
 - After changing collections/blocks/fields, run:
-    - `bun run generate:types`
-    - `bun run generate:importmap` (if applicable)
+  - `bun run generate:types`
+  - `bun run generate:importmap` (if applicable)
 - For schema/data model changes, create migration before merging:
-    - `bun run payload migrate:create`
+  - `bun run payload migrate:create`
 - Prefer typed Payload config/collection/block definitions.
 
 ## Environment Variables
