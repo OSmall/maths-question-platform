@@ -1,5 +1,13 @@
 import React from 'react'
+import Link from 'next/link'
 import '../globals.css'
+import { ThemeModeCycleButton } from '@/components/theme/theme-mode-cycle-button'
+import {
+  NavigationMenu,
+  NavigationMenuItem,
+  NavigationMenuLink,
+  NavigationMenuList,
+} from '@/components/ui/navigation-menu'
 import { ThemeProvider } from '@/components/theme/theme-provider'
 
 export const metadata = {
@@ -19,6 +27,21 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
           enableSystem
           disableTransitionOnChange
         >
+          <header className="sticky top-0 z-40 border-b border-border bg-background/95 backdrop-blur">
+            <nav
+              aria-label="Primary"
+              className="mx-auto flex w-full max-w-6xl items-center justify-between gap-3 px-4 py-3 sm:px-6"
+            >
+              <NavigationMenu>
+                <NavigationMenuList>
+                  <NavigationMenuItem>
+                    <NavigationMenuLink render={<Link href="/" />}>Home</NavigationMenuLink>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+              <ThemeModeCycleButton />
+            </nav>
+          </header>
           <main>{children}</main>
         </ThemeProvider>
       </body>

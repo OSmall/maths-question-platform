@@ -22,6 +22,8 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
+    "@hugeicons/core-free-icons": "^4.0.0",
+    "@hugeicons/react": "^1.1.5",
     "@payloadcms/db-vercel-postgres": "3.65.0",
     "@payloadcms/live-preview-react": "3.65.0",
     "@payloadcms/next": "3.65.0",

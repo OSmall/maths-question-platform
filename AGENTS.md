@@ -138,13 +138,13 @@ When implementing changes:
 ### Data Access Architecture
 
 - For non-trivial features, follow this flow: page/route -> service -> repository. The repository will fetch from the
-backend and map to domain objects using mappers.
+  backend and map to domain objects using mappers.
 - Keep Next.js pages and route handlers thin. Framework layers should parse request params and translate results into
-framework responses (`Response`, `redirect`, `notFound()`), not hold business rules. Decouple the Next.js from the
-business logic.
+  framework responses (`Response`, `redirect`, `notFound()`), not hold business rules. Decouple the Next.js from the
+  business logic.
 - Put business logic (validation, authorization decisions, orchestration) in `src/lib/service/*`.
 - Use `neverthrow` between the service layer and Next.js boundaries (page/route). Services should return `Result` /
-`ResultAsync`, and Next.js boundaries should map domain errors to framework behavior.
+  `ResultAsync`, and Next.js boundaries should map domain errors to framework behavior.
 - Keep Payload/CMS types out of UI-facing components; map to domain types before rendering.
 - In repositories, shape queries deliberately (`select`, minimal `depth`) and return mapped domain entities.
 - At route/page boundaries, translate domain errors into framework behavior (for example `notFound()`).
@@ -233,6 +233,20 @@ The following are currently warnings (not errors):
 - In Server Components, prefer JSX element render pattern:
   - `render={<Link href="/path" />}`
 - Use `nativeButton={false}` when rendering non-button elements through Button.
+
+### Theming and Dark Mode (Mandatory for UI work)
+
+- This repo uses shadcn CSS-variable theming (`components.json` has `tailwind.cssVariables: true`).
+- Theme tokens are defined in `src/app/globals.css` with light values in `:root` and dark values in `.dark`.
+- Prefer semantic token utilities over hardcoded palette colors:
+  - Use classes like `bg-background`, `text-foreground`, `bg-card`, `text-card-foreground`, `bg-popover`,
+    `text-popover-foreground`, `bg-primary`, `text-primary-foreground`, `bg-secondary`,
+    `text-secondary-foreground`, `bg-muted`, `text-muted-foreground`, `border-border`, `bg-input`, `ring-ring`.
+- Opacity variants are allowed on tokens (for example `bg-primary/10`, `text-foreground/80`, `ring-ring/50`).
+- Do not hardcode core surface/text/border colors in app UI (for example `bg-white`, `text-slate-900`,
+  `dark:bg-slate-900`) when a semantic token class can express the same intent.
+- Use `dark:` only when behavior/layout truly differs by theme, not for routine color swapping already handled by
+  tokens.
 
 ## Payload CMS Rules
 
