@@ -32,3 +32,17 @@ export class NotANumberError extends FormatError {
     super(`${value} is not a number`, options)
   }
 }
+
+export class UnauthorizedError extends AppError {
+  static ERROR_NAME = 'UNAUTHORIZED_ERROR'
+  constructor(message = 'You are not allowed to access this resource', options: ErrorOptions = {}) {
+    super(message, options)
+  }
+}
+
+export class InvalidPreviewSlugError extends FormatError {
+  static ERROR_NAME = 'INVALID_PREVIEW_SLUG_ERROR'
+  constructor(slug: unknown, options: ErrorOptions = {}) {
+    super(`Invalid preview slug: ${slug}`, options)
+  }
+}

@@ -5,13 +5,13 @@ import { QuestionSelect } from '@/payload/payload-types'
 import { ResultAsync } from 'neverthrow'
 import { NotFoundError, PayloadQueryError } from '@/lib/errors'
 
-export function fetchQuestionById(id: number) {
-  return queryPayloadForQuestionByIdResultAsync(id)
+export function fetchQuestionByIdAndDraft(id: number, draft: boolean) {
+  return queryPayloadForQuestionByIdAndDraftResultAsync(id, draft)
     .map(payloadQuestionToDomain)
 }
 
-function queryPayloadForQuestionByIdResultAsync(id: number) {
-  return ResultAsync.fromPromise(queryPayloadForQuestionById(id), (err) => {
+function queryPayloadForQuestionByIdAndDraftResultAsync(id: number, draft = false) {
+  return ResultAsync.fromPromise(queryPayloadForQuestionByIdAndDraft(id, draft), (err) => {
     if (err instanceof NotFound) {
       return new NotFoundError("Question", id, {cause: err})
     } else {
@@ -19,23 +19,6 @@ function queryPayloadForQuestionByIdResultAsync(id: number) {
     }
   })
 }
-
-async function queryPayloadForQuestionById(id: number) {
-  const payload = await getPayload({ config })
-  return payload
-    .findByID({
-      collection: 'question',
-      id: id,
-      depth: 0,
-      select: questionSelect,
-    })
-    .then((question) => {
-      console.trace(`question retrieved: ${JSON.stringify(question)}`)
-      return question
-    })
-}
-
-export type PayloadQuestionForDomain = Awaited<ReturnType<typeof queryPayloadForQuestionById>>
 
 const questionSelect = {
   overallQuestionRichText: true,
@@ -54,3 +37,21 @@ const questionSelect = {
     },
   },
 } as const satisfies QuestionSelect
+
+async function queryPayloadForQuestionByIdAndDraft(id: number, draft: boolean) {
+  const payload = await getPayload({ config })
+  return payload
+    .findByID({
+      collection: 'question',
+      id: id,
+      draft,
+      depth: 0,
+      select: questionSelect,
+    })
+    .then((question) => {
+      console.trace(`question retrieved: ${JSON.stringify(question)}`)
+      return question
+    })
+}
+
+export type PayloadQuestionForDomain = Awaited<ReturnType<typeof queryPayloadForQuestionByIdAndDraft>>

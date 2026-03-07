@@ -139,6 +139,12 @@ When implementing changes:
 
 - For non-trivial features, follow this flow: page/route -> service -> repository. The repository will fetch from the
 backend and map to domain objects using mappers.
+- Keep Next.js pages and route handlers thin. Framework layers should parse request params and translate results into
+framework responses (`Response`, `redirect`, `notFound()`), not hold business rules. Decouple the Next.js from the
+business logic.
+- Put business logic (validation, authorization decisions, orchestration) in `src/lib/service/*`.
+- Use `neverthrow` between the service layer and Next.js boundaries (page/route). Services should return `Result` /
+`ResultAsync`, and Next.js boundaries should map domain errors to framework behavior.
 - Keep Payload/CMS types out of UI-facing components; map to domain types before rendering.
 - In repositories, shape queries deliberately (`select`, minimal `depth`) and return mapped domain entities.
 - At route/page boundaries, translate domain errors into framework behavior (for example `notFound()`).

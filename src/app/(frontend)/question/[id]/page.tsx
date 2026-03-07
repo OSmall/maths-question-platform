@@ -1,7 +1,7 @@
-// import { draftMode } from 'next/headers'
 import { RefreshRouteOnSave } from '@/components/live-preview/refresh-route-on-save'
 import { QuestionRenderer } from '@/components/question/question-renderer'
 import { getQuestionById } from '@/lib/service/question-service'
+import { draftMode } from 'next/headers'
 import { notFound } from 'next/navigation'
 
 type QuestionLivePageProps = {
@@ -12,13 +12,13 @@ type QuestionLivePageProps = {
 
 export default async function QuestionLivePage({ params }: QuestionLivePageProps) {
   const { id } = await params
-  // const { isEnabled: isDraftMode } = await draftMode() // todo draft mode
+  const { isEnabled: isDraftMode } = await draftMode()
 
-  const questionResult = await getQuestionById(id)
+  const questionResult = await getQuestionById(id, { draft: isDraftMode })
   return questionResult.match(
     (question) => (
       <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center px-4 py-8 md:px-6 md:py-10">
-        <RefreshRouteOnSave />
+        {isDraftMode && <RefreshRouteOnSave />}
         <QuestionRenderer question={question} />
       </div>
     ),

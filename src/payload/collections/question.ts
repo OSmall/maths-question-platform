@@ -7,7 +7,7 @@ export const Question: CollectionConfig = {
   slug: 'question',
   admin: {
     livePreview: {
-      url: ({ data }) => `/question/${data.id}`,
+      url: ({ data }) => `/api/draft?slug=${encodeURIComponent(`/question/${data.id}`)}`,
     },
   },
   versions: {
