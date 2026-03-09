@@ -3,11 +3,7 @@
   "mcp": {
     "shadcn": {
       "type": "local",
-      "command": [
-        "bunx",
-        "shadcn@latest",
-        "mcp"
-      ],
+      "command": ["bunx", "--bun", "shadcn", "mcp"],
       "enabled": true
     }
   }
