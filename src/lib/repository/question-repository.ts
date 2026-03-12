@@ -13,7 +13,7 @@ export function fetchQuestionByIdAndDraft(id: number, draft: boolean) {
 function queryPayloadForQuestionByIdAndDraftResultAsync(id: number, draft = false) {
   return ResultAsync.fromPromise(queryPayloadForQuestionByIdAndDraft(id, draft), (err) => {
     if (err instanceof NotFound) {
-      return new NotFoundError("Question", id, {cause: err})
+      return new NotFoundError('Question', id, { cause: err })
     } else {
       return new PayloadQueryError(err)
     }
@@ -45,7 +45,17 @@ async function queryPayloadForQuestionByIdAndDraft(id: number, draft: boolean) {
       collection: 'question',
       id: id,
       draft,
-      depth: 0,
+      depth: 1,
+      populate: {
+        media: {
+          alt: true,
+          filename: true,
+          height: true,
+          mimeType: true,
+          url: true,
+          width: true,
+        },
+      },
       select: questionSelect,
     })
     .then((question) => {
@@ -54,4 +64,6 @@ async function queryPayloadForQuestionByIdAndDraft(id: number, draft: boolean) {
     })
 }
 
-export type PayloadQuestionForDomain = Awaited<ReturnType<typeof queryPayloadForQuestionByIdAndDraft>>
+export type PayloadQuestionForDomain = Awaited<
+  ReturnType<typeof queryPayloadForQuestionByIdAndDraft>
+>

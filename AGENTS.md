@@ -23,6 +23,13 @@ Favor concise, repo-specific guidance. If this file conflicts with generic model
   - `tests/int` Vitest integration tests
   - `tests/e2e` Playwright e2e tests
 
+## Architecture
+
+- Neon uses branch-based environments with the Neon-managed Vercel integration creating a new database branch for each
+preview deployment.
+- The default Neon branch is `staging` so preview database branches are created as children of `staging`.
+- The `production` database branch is a separate root branch and is not branched from `staging`.
+
 ## Bun-First Policy (Mandatory)
 
 This project is Bun-first. Use Bun for runtime, package management, and script execution.
