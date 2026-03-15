@@ -5,7 +5,7 @@ import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
 import { assertNever } from '@/lib/utils/types'
-import { MultipleChoiceAnswerMechanism, QuestionPart } from '@/lib/domain/question'
+import type { MultipleChoiceAnswerMechanism, QuestionPart } from '@/lib/domain/question'
 
 const renderMultipleChoice = (answerMechanism: MultipleChoiceAnswerMechanism) => {
   return (

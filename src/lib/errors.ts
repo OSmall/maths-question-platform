@@ -1,3 +1,5 @@
+import type { ZodError } from 'zod'
+
 class AppError extends Error {
   static ERROR_NAME = 'APP_ERROR'
   constructor(message: string, options: ErrorOptions = {}) {
@@ -44,5 +46,16 @@ export class InvalidPreviewSlugError extends FormatError {
   static ERROR_NAME = 'INVALID_PREVIEW_SLUG_ERROR'
   constructor(slug: unknown, options: ErrorOptions = {}) {
     super(`Invalid preview slug: ${slug}`, options)
+  }
+}
+
+export class QuestionNotRenderableError extends AppError {
+  static ERROR_NAME = 'QUESTION_NOT_RENDERABLE_ERROR'
+
+  readonly validationError: ZodError
+
+  constructor(validationError: ZodError, options: ErrorOptions = { cause: validationError }) {
+    super('Question is not renderable', options)
+    this.validationError = validationError
   }
 }

@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { RichTextRenderer } from '@/components/rich-text/rich-text-renderer'
-import { Question } from '@/lib/domain/question'
+import type { Question } from '@/lib/domain/question'
 
 import { QuestionPartInput } from './question-part-input'
 

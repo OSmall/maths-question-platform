@@ -6,8 +6,7 @@ import { ResultAsync } from 'neverthrow'
 import { NotFoundError, PayloadQueryError } from '@/lib/errors'
 
 export function fetchQuestionByIdAndDraft(id: number, draft: boolean) {
-  return queryPayloadForQuestionByIdAndDraftResultAsync(id, draft)
-    .map(payloadQuestionToDomain)
+  return queryPayloadForQuestionByIdAndDraftResultAsync(id, draft).andThen(payloadQuestionToDomain)
 }
 
 function queryPayloadForQuestionByIdAndDraftResultAsync(id: number, draft = false) {

@@ -1,5 +1,5 @@
 import { assertNever } from '@/lib/utils/types'
-import { MultipleChoiceAnswerMechanism, Question, QuestionPart } from '@/lib/domain/question'
+import type { MultipleChoiceAnswerMechanism, Question, QuestionPart } from '@/lib/domain/question'
 
 import { RichTextRendererStatic } from './rich-text-renderer-static'
 

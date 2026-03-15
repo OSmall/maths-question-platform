@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { Textarea } from '@/components/ui/textarea'
-import { MultipleChoiceAnswerMechanism, Question, QuestionPart } from '@/lib/domain/question'
+import type { MultipleChoiceAnswerMechanism, Question, QuestionPart } from '@/lib/domain/question'
 import { assertNever } from '@/lib/utils/types'
 
 import { RichTextRendererStatic } from './rich-text-renderer-static'
