@@ -20,13 +20,14 @@ Favor concise, repo-specific guidance. If this file conflicts with generic model
   - `src/lib/repository` data-access layer
   - `src/lib/data` CMS-to-domain mapping layer
   - `src/lib/domain` CMS-independent domain types
-  - `tests/int` Vitest integration tests
+  - `tests/unit` Bun unit tests (mock-first)
+  - `tests/int` disabled integration tests pending redesign
   - `tests/e2e` Playwright e2e tests
 
 ## Architecture
 
 - Neon uses branch-based environments with the Neon-managed Vercel integration creating a new database branch for each
-preview deployment.
+  preview deployment.
 - The default Neon branch is `staging` so preview database branches are created as children of `staging`.
 - The `production` database branch is a separate root branch and is not branched from `staging`.
 
@@ -60,7 +61,7 @@ Do not use:
 | --------------------------------- | ------------------- |
 | `npm install`                     | `bun install`       |
 | `npm run dev`                     | `bun run dev`       |
-| `npx vitest`                      | `bunx vitest`       |
+| `npm test`                        | `bun test`          |
 | `npx playwright`                  | `bunx playwright`   |
 | `bunx <tool>` when Node is forced | `bunx --bun <tool>` |
 | `node script.ts`                  | `bun script.ts`     |
@@ -92,20 +93,20 @@ bun run lint
 
 ```bash
 bun run test
-bun run test:int
+bun test tests/unit
 bun run test:e2e
 ```
 
 ### Run a Single Test (Important)
 
-#### Vitest (integration)
+#### Bun test (unit)
 
 ```bash
 # Single test file
-bunx vitest run tests/int/api.int.spec.ts --config ./vitest.config.mts
+bun test ./tests/unit/question-service.test.ts
 
 # By test name
-bunx vitest run -t "fetches users" --config ./vitest.config.mts
+bun test tests/unit --test-name-pattern "parses the id string"
 ```
 
 #### Playwright (e2e)
@@ -163,8 +164,8 @@ Do what is relevant to the change scope:
 - Always for meaningful code changes:
   - `bun run lint`
   - `bun run build`
-- Backend/data/schema behavior changed:
-  - `bun run test:int`
+- Service/domain behavior changed:
+  - `bun test tests/unit`
 - UI/user-flow changed:
   - `bun run test:e2e` (or explain why not feasible in current environment)
 - Never manually edit generated files (especially `src/payload/payload-types.ts`).
