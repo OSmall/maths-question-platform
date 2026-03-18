@@ -13,15 +13,17 @@ type QuestionPageProps = {
 }
 
 export default async function QuestionPage({ params }: QuestionPageProps) {
-  const { id } = await params
-  const { isEnabled: isDraftMode } = await draftMode()
+  const [{ id }, { isEnabled: isDraftMode }] = await Promise.all([params, draftMode()])
 
   const questionResult = await getQuestionById(id, { draft: isDraftMode })
+
   return questionResult.match(
     (question) => (
-      <div className="mx-auto flex min-h-screen w-full max-w-4xl flex-col items-center px-4 py-8 md:px-6 md:py-10">
+      <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,#ecfdf5_0%,#f8fffb_45%,#ffffff_100%)] px-4 py-8 dark:bg-[radial-gradient(circle_at_top,#064e3b_0%,#111827_45%,#020617_100%)] md:px-6 md:py-10">
         {isDraftMode && <RefreshRouteOnSave />}
-        <QuestionRenderer question={question} />
+        <div className="mx-auto flex w-full justify-center">
+          <QuestionRenderer question={question} />
+        </div>
       </div>
     ),
     (err) => {
