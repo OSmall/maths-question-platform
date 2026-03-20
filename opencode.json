@@ -5,6 +5,11 @@
       "type": "local",
       "command": ["bunx", "--bun", "shadcn", "mcp"],
       "enabled": true
+    },
+    "dbhub": {
+      "type": "local",
+      "command": ["dbhub", "--transport", "stdio", "--dsn", "{{connection string}}"],
+      "enabled": false
     }
   }
 }

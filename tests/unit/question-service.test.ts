@@ -57,12 +57,13 @@ describe('getQuestionById', () => {
 function createQuestion(id: number, shuffle: boolean): Question {
   return {
     id,
-    richText: undefined,
+    prompt: undefined,
+    subTopics: [],
     parts: [
       {
         id: 'part-1',
-        richText: undefined,
-        answerMechanism: {
+        prompt: undefined,
+        response: {
           type: 'multipleChoice',
           choices: [{ id: 'answer-1', text: 'Option A' }],
           shuffle,

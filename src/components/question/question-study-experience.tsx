@@ -10,7 +10,6 @@ import {
   CircleAlert,
   Clock3,
   Flag,
-  Layers3,
   NotebookPen,
   SkipForward,
   Target,
@@ -30,63 +29,73 @@ import {
 } from '@/components/ui/accordion'
 import { cn } from '@/lib/utils'
 import type { Question } from '@/lib/domain/question'
-
-import { RichTextRenderer } from './rich-text-renderer'
 import type {
   QuestionReviewPart,
   QuestionReviewPayload,
-  QuestionSessionMeta,
-} from './question-study-types'
+  ReviewQuestionSubmissionResult,
+  SubmittedQuestionResponses,
+} from '@/lib/domain/question-review'
+
+import { RichTextRenderer } from './rich-text-renderer'
+import type { QuestionSessionMeta } from './question-study-types'
 
 type QuestionStudyExperienceProps = {
   isDraftMode: boolean
   question: Question
-  reviewPayload: QuestionReviewPayload
+  reviewQuestionAction: (args: {
+    questionId: number
+    responses: SubmittedQuestionResponses
+  }) => Promise<ReviewQuestionSubmissionResult>
   sessionMeta: QuestionSessionMeta
 }
 
-type PartResult = {
-  accentClassName: string
-  body: string
-  status: 'correct' | 'incorrect' | 'unanswered'
-  title: string
-}
+type MultipleChoiceChoice = Extract<
+  Question['parts'][number]['response'],
+  { type: 'multipleChoice' }
+>['choices'][number]
 
 export const QuestionStudyExperience = ({
   isDraftMode,
   question,
-  reviewPayload,
+  reviewQuestionAction,
   sessionMeta,
 }: QuestionStudyExperienceProps) => {
   const [responses, setResponses] = useState<Record<string, string>>({})
   const [isSaved, setIsSaved] = useState(false)
   const [isSkipped, setIsSkipped] = useState(false)
-  const [isSubmitted, setIsSubmitted] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [reviewError, setReviewError] = useState<string | null>(null)
+  const [reviewPayload, setReviewPayload] = useState<QuestionReviewPayload | null>(null)
   const [flaggedPartIds, setFlaggedPartIds] = useState<string[]>(
     sessionMeta.sessionFlaggedCount > 0 && question.parts[0] ? [question.parts[0].id] : [],
   )
 
+  const isSubmitted = reviewPayload !== null
   const answeredCount = question.parts.filter((part) => hasResponse(responses[part.id])).length
   const completionPercent = Math.round((answeredCount / question.parts.length) * 100)
-  const partResults = useMemo(() => {
-    if (!isSubmitted) {
-      return null
-    }
+  const choiceOrderByPartId = useMemo(
+    () =>
+      Object.fromEntries(
+        question.parts.map((part) => {
+          if (part.response.type !== 'multipleChoice') {
+            return [part.id, []]
+          }
 
-    return Object.fromEntries(
-      question.parts.map((part) => [
-        part.id,
-        evaluatePart(part, responses[part.id], reviewPayload.parts[part.id]),
-      ]),
-    ) as Record<string, PartResult>
-  }, [isSubmitted, question.parts, responses, reviewPayload.parts])
+          return [
+            part.id,
+            part.response.shuffle ? shuffleChoices(part.response.choices) : part.response.choices,
+          ]
+        }),
+      ) as Record<string, MultipleChoiceChoice[]>,
+    [question.parts],
+  )
 
   const reviewSummary = useMemo(() => {
-    if (!partResults) {
+    if (!reviewPayload) {
       return null
     }
 
-    const results = Object.values(partResults)
+    const results = Object.values(reviewPayload.parts)
     const correctCount = results.filter((result) => result.status === 'correct').length
     const unansweredCount = results.filter((result) => result.status === 'unanswered').length
 
@@ -96,7 +105,7 @@ export const QuestionStudyExperience = ({
       incorrectCount: results.filter((result) => result.status === 'incorrect').length,
       unansweredCount,
     }
-  }, [partResults, question.parts.length])
+  }, [question.parts.length, reviewPayload])
 
   const activeAccuracyLabel = reviewSummary
     ? `${reviewSummary.accuracyPercent}% this question`
@@ -104,19 +113,36 @@ export const QuestionStudyExperience = ({
 
   const footerPrimaryLabel = isSubmitted
     ? `Continue to ${reviewPayload.nextQuestionLabel}`
-    : 'Check answer'
+    : isSubmitting
+      ? 'Checking answer...'
+      : 'Check answer'
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSkipped(false)
 
-    if (isSubmitted) {
+    if (isSubmitted || isSubmitting) {
       return
     }
 
-    // Replace this local review transition with a server action or route call that returns
-    // correctness and solutionMethods only after the student submits the full question.
-    setIsSubmitted(true)
+    setIsSubmitting(true)
+    setReviewError(null)
+
+    try {
+      const result = await reviewQuestionAction({
+        questionId: question.id,
+        responses,
+      })
+
+      if (!result.ok) {
+        setReviewError(result.message)
+        return
+      }
+
+      setReviewPayload(result.reviewPayload)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -151,12 +177,10 @@ export const QuestionStudyExperience = ({
                 answeredCount={answeredCount}
                 isDraftMode={isDraftMode}
                 question={question}
-                sessionMeta={sessionMeta}
               />
 
               {question.parts.map((part, index) => {
-                const review = reviewPayload.parts[part.id]
-                const result = partResults?.[part.id]
+                const review = reviewPayload?.parts[part.id]
                 const response = responses[part.id]
                 const isFlagged = flaggedPartIds.includes(part.id)
 
@@ -179,10 +203,10 @@ export const QuestionStudyExperience = ({
                               </div>
                             ) : null}
 
-                            {part.richText ? (
+                            {part.prompt ? (
                               <RichTextRenderer
                                 className="text-base leading-8 text-foreground/90 sm:text-lg [&_p:last-child]:mb-0"
-                                data={part.richText}
+                                data={part.prompt}
                               />
                             ) : question.parts.length > 1 ? null : (
                               <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
@@ -221,10 +245,10 @@ export const QuestionStudyExperience = ({
                               <div>
                                 <p className="text-sm font-semibold text-foreground">Your answer</p>
                                 <p className="text-sm text-muted-foreground">
-                                  {part.answerMechanism.type === 'multipleChoice'
+                                  {part.response.type === 'multipleChoice'
                                     ? 'Pick one option. The entire question is checked in one submission.'
-                                    : part.answerMechanism.type === 'freeTextValidation'
-                                      ? 'Write your working clearly. You can still submit blank parts.'
+                                    : part.response.type === 'shortText'
+                                      ? 'Enter your final answer. You can still submit blank parts.'
                                       : 'Mark whether you solved this confidently before you review the model solution.'}
                                 </p>
                               </div>
@@ -233,12 +257,13 @@ export const QuestionStudyExperience = ({
                                 className="rounded-full px-3 py-1 text-[11px] font-semibold"
                                 variant="outline"
                               >
-                                {answerTypeLabel(part.answerMechanism.type)}
+                                {answerTypeLabel(part.response.type)}
                               </Badge>
                             </div>
 
                             <AnswerField
                               disabled={isSubmitted}
+                              displayedChoices={choiceOrderByPartId[part.id]}
                               part={part}
                               response={response}
                               setResponse={(value) => {
@@ -249,13 +274,8 @@ export const QuestionStudyExperience = ({
                           </div>
                         </div>
 
-                        {review && result ? (
-                          <QuestionReviewPanel
-                            part={part}
-                            response={response}
-                            review={review}
-                            result={result}
-                          />
+                        {review ? (
+                          <QuestionReviewPanel part={part} response={response} review={review} />
                         ) : null}
                       </div>
                     </section>
@@ -272,10 +292,12 @@ export const QuestionStudyExperience = ({
               answeredCount={answeredCount}
               footerPrimaryLabel={footerPrimaryLabel}
               isSaved={isSaved}
+              isSubmitting={isSubmitting}
               isSkipped={isSkipped}
               isSubmitted={isSubmitted}
-              nextQuestionLabel={reviewPayload.nextQuestionLabel}
+              nextQuestionLabel={reviewPayload?.nextQuestionLabel ?? `Question ${question.id + 1}`}
               question={question}
+              reviewError={reviewError}
               reviewSummary={reviewSummary}
               setIsSaved={setIsSaved}
               setIsSkipped={setIsSkipped}
@@ -319,9 +341,6 @@ const MobileSessionHeader = ({
         <div className="flex flex-wrap items-center gap-2">
           <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="outline">
             {sessionMeta.attemptLabel}
-          </Badge>
-          <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="secondary">
-            {sessionMeta.topicLabel}
           </Badge>
           {isDraftMode ? (
             <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="outline">
@@ -429,7 +448,6 @@ const DesktopSessionRail = ({
           </Progress>
 
           <div className="grid gap-2.5 text-sm">
-            <RailMetric icon={Layers3} label="Topic" value={sessionMeta.topicLabel} />
             <RailMetric icon={Target} label="Accuracy" value={activeAccuracyLabel} />
             <RailMetric icon={Flag} label="Flagged" value={`${flaggedCount} marked`} />
             <RailMetric icon={Clock3} label="Time spent" value={sessionMeta.timeSpentLabel} />
@@ -441,24 +459,28 @@ const DesktopSessionRail = ({
           </div>
         </div>
 
-        <Separator className="my-5 bg-border/70" />
+        {question.subTopics.length > 0 ? (
+          <>
+            <Separator className="my-5 bg-border/70" />
 
-        <div className="space-y-3">
-          <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
-            Current focus
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {sessionMeta.aspectLabels.map((label) => (
-              <Badge
-                className="rounded-full px-3 py-1 text-xs font-medium"
-                key={label}
-                variant="outline"
-              >
-                {label}
-              </Badge>
-            ))}
-          </div>
-        </div>
+            <div className="space-y-3">
+              <p className="text-xs font-semibold tracking-[0.16em] text-muted-foreground uppercase">
+                Current focus
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {question.subTopics.map((subTopic) => (
+                  <Badge
+                    className="rounded-full px-3 py-1 text-xs font-medium"
+                    key={`${subTopic.topicName}-${subTopic.name}`}
+                    variant="outline"
+                  >
+                    {formatSubTopicLabel(subTopic)}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          </>
+        ) : null}
 
         {reviewSummary ? (
           <>
@@ -510,7 +532,7 @@ const DesktopSessionRail = ({
                 <div>
                   <p>Part {index + 1}</p>
                   <p className="text-xs text-muted-foreground">
-                    {answerTypeLabel(part.answerMechanism.type)}
+                    {answerTypeLabel(part.response.type)}
                   </p>
                 </div>
               </a>
@@ -526,17 +548,11 @@ type QuestionHeaderProps = {
   answeredCount: number
   isDraftMode: boolean
   question: Question
-  sessionMeta: QuestionSessionMeta
 }
 
-const QuestionHeader = ({
-  answeredCount,
-  isDraftMode,
-  question,
-  sessionMeta,
-}: QuestionHeaderProps) => {
+const QuestionHeader = ({ answeredCount, isDraftMode, question }: QuestionHeaderProps) => {
   const answerTypes = Array.from(
-    new Set(question.parts.map((part) => answerTypeLabel(part.answerMechanism.type))),
+    new Set(question.parts.map((part) => answerTypeLabel(part.response.type))),
   )
 
   return (
@@ -544,9 +560,6 @@ const QuestionHeader = ({
       <div className="flex flex-wrap items-center gap-2">
         <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="outline">
           Question {question.id}
-        </Badge>
-        <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="secondary">
-          {sessionMeta.topicLabel}
         </Badge>
         {answerTypes.map((label) => (
           <Badge
@@ -578,7 +591,7 @@ const QuestionHeader = ({
 
         <RichTextRenderer
           className="max-w-4xl text-base leading-8 text-foreground/90 sm:text-lg sm:leading-9 [&_figure]:my-6 [&_figure]:overflow-hidden [&_figure]:rounded-[1.6rem] [&_figure]:border [&_figure]:border-border/70 [&_figure]:bg-background/80 [&_figure]:shadow-[0_20px_40px_-32px_rgba(15,23,42,0.38)] [&_img]:max-h-107.5 [&_img]:w-full [&_img]:object-contain [&_p:first-child]:text-[1.7rem] [&_p:first-child]:leading-[1.18] [&_p:first-child]:font-semibold [&_p:first-child]:tracking-tight sm:[&_p:first-child]:text-[2.35rem]"
-          data={question.richText ?? null}
+          data={question.prompt ?? null}
         />
       </div>
     </header>
@@ -587,13 +600,20 @@ const QuestionHeader = ({
 
 type AnswerFieldProps = {
   disabled: boolean
+  displayedChoices: MultipleChoiceChoice[]
   part: Question['parts'][number]
   response: string | undefined
   setResponse: (value: string) => void
 }
 
-const AnswerField = ({ disabled, part, response, setResponse }: AnswerFieldProps) => {
-  switch (part.answerMechanism.type) {
+const AnswerField = ({
+  disabled,
+  displayedChoices,
+  part,
+  response,
+  setResponse,
+}: AnswerFieldProps) => {
+  switch (part.response.type) {
     case 'multipleChoice':
       return (
         <RadioGroup
@@ -601,7 +621,7 @@ const AnswerField = ({ disabled, part, response, setResponse }: AnswerFieldProps
           onValueChange={(value) => setResponse(String(value))}
           value={response ?? ''}
         >
-          {part.answerMechanism.choices.map((choice, index) => {
+          {displayedChoices.map((choice, index) => {
             const choiceId = `${part.id}-${choice.id}`
             const isSelected = response === choice.id
 
@@ -635,13 +655,13 @@ const AnswerField = ({ disabled, part, response, setResponse }: AnswerFieldProps
           })}
         </RadioGroup>
       )
-    case 'freeTextValidation':
+    case 'shortText':
       return (
         <Textarea
           className="min-h-32 rounded-[1.3rem] border-border/70 bg-background/85 px-4 py-3 text-base leading-7 text-foreground placeholder:text-muted-foreground focus-visible:border-primary/45"
           disabled={disabled}
           onChange={(event) => setResponse(event.target.value)}
-          placeholder="Type your final answer and any short supporting note"
+          placeholder="Type your final answer"
           value={response ?? ''}
         />
       )
@@ -696,10 +716,16 @@ type QuestionReviewPanelProps = {
   part: Question['parts'][number]
   response: string | undefined
   review: QuestionReviewPart
-  result: PartResult
 }
 
-const QuestionReviewPanel = ({ part, response, review, result }: QuestionReviewPanelProps) => {
+const QuestionReviewPanel = ({ part, response, review }: QuestionReviewPanelProps) => {
+  const accentClassName =
+    review.status === 'correct'
+      ? 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300'
+      : review.status === 'incorrect'
+        ? 'bg-amber-500/12 text-amber-700 dark:text-amber-300'
+        : 'border border-border/70 bg-muted/70 text-foreground'
+
   return (
     <section className="rounded-[1.6rem] border border-border/70 bg-background/70 p-4 sm:p-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -707,19 +733,19 @@ const QuestionReviewPanel = ({ part, response, review, result }: QuestionReviewP
           <div
             className={cn(
               'inline-flex items-center gap-2 rounded-full px-3 py-1 text-xs font-semibold',
-              result.accentClassName,
+              accentClassName,
             )}
           >
-            {result.status === 'correct' ? (
+            {review.status === 'correct' ? (
               <CheckCircle2 className="size-4" />
-            ) : result.status === 'incorrect' ? (
+            ) : review.status === 'incorrect' ? (
               <CircleAlert className="size-4" />
             ) : (
               <SkipForward className="size-4" />
             )}
-            {result.title}
+            {review.title}
           </div>
-          <p className="max-w-3xl text-sm leading-7 text-muted-foreground">{result.body}</p>
+          <p className="max-w-3xl text-sm leading-7 text-muted-foreground">{review.body}</p>
         </div>
 
         {review.correctAnswerText ? (
@@ -732,49 +758,46 @@ const QuestionReviewPanel = ({ part, response, review, result }: QuestionReviewP
         ) : null}
       </div>
 
-      <div className="mt-5 rounded-[1.3rem] border border-border/70 bg-card/85 p-4">
-        <p className="text-sm font-semibold text-foreground">Why this works</p>
-        <p className="mt-2 text-sm leading-7 text-muted-foreground">{review.explanation}</p>
-      </div>
-
-      <div className="mt-5">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-sm font-semibold text-foreground">Worked solutions</p>
-            <p className="text-sm text-muted-foreground">
-              {response
-                ? 'Compare your answer with the methods below.'
-                : 'Use the methods below to rebuild the answer from scratch.'}
-            </p>
+      {review.workedSolutions.length > 0 ? (
+        <div className="mt-5">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div>
+              <p className="text-sm font-semibold text-foreground">Worked solutions</p>
+              <p className="text-sm text-muted-foreground">
+                {response
+                  ? 'Compare your answer with the methods below.'
+                  : 'Use the methods below to rebuild the answer from scratch.'}
+              </p>
+            </div>
           </div>
-        </div>
 
-        <Accordion className="border-border/70 bg-background/70" multiple>
-          {review.solutionMethods.map((solutionMethod, index) => (
-            <AccordionItem key={solutionMethod.id} value={solutionMethod.id}>
-              <AccordionTrigger className="px-4 py-4 text-base font-semibold no-underline hover:no-underline">
-                <div className="flex items-start gap-3">
-                  <span className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
-                    {index + 1}
-                  </span>
-                  <div>
-                    <p>{solutionMethod.title}</p>
-                    <p className="mt-1 text-sm font-normal text-muted-foreground">
-                      Method {index + 1} for {questionPartLabel(part)}
-                    </p>
+          <Accordion className="border-border/70 bg-background/70" multiple>
+            {review.workedSolutions.map((solutionMethod, index) => (
+              <AccordionItem key={solutionMethod.id} value={solutionMethod.id}>
+                <AccordionTrigger className="px-4 py-4 text-base font-semibold no-underline hover:no-underline">
+                  <div className="flex items-start gap-3">
+                    <span className="mt-0.5 flex size-8 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p>Solution {index + 1}</p>
+                      <p className="mt-1 text-sm font-normal text-muted-foreground">
+                        Worked solution {index + 1} for {questionPartLabel(part)}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="pb-5">
-                <RichTextRenderer
-                  className="text-sm leading-7 text-foreground/85 [&_p:last-child]:mb-0"
-                  data={solutionMethod.richText}
-                />
-              </AccordionContent>
-            </AccordionItem>
-          ))}
-        </Accordion>
-      </div>
+                </AccordionTrigger>
+                <AccordionContent className="pb-5">
+                  <RichTextRenderer
+                    className="text-sm leading-7 text-foreground/85 [&_p:last-child]:mb-0"
+                    data={solutionMethod.prompt}
+                  />
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      ) : null}
     </section>
   )
 }
@@ -783,10 +806,12 @@ type StickyActionBarProps = {
   answeredCount: number
   footerPrimaryLabel: string
   isSaved: boolean
+  isSubmitting: boolean
   isSkipped: boolean
   isSubmitted: boolean
   nextQuestionLabel: string
   question: Question
+  reviewError: string | null
   reviewSummary: {
     accuracyPercent: number
     correctCount: number
@@ -801,10 +826,12 @@ const StickyActionBar = ({
   answeredCount,
   footerPrimaryLabel,
   isSaved,
+  isSubmitting,
   isSkipped,
   isSubmitted,
   nextQuestionLabel,
   question,
+  reviewError,
   reviewSummary,
   setIsSaved,
   setIsSkipped,
@@ -830,6 +857,11 @@ const StickyActionBar = ({
                 ? `The next step can request fresh review data and navigate to ${nextQuestionLabel}.`
                 : `${answeredCount} of ${question.parts.length} parts answered. Blank parts can still be submitted.`}
             </p>
+            {reviewError ? (
+              <p className="mt-2 text-sm font-medium text-amber-700 dark:text-amber-300">
+                {reviewError}
+              </p>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -874,6 +906,7 @@ const StickyActionBar = ({
           <div className="flex flex-wrap justify-end gap-2">
             <Button
               className="rounded-full px-5"
+              disabled={isSubmitting}
               onClick={isSubmitted ? handleContinue : undefined}
               type={isSubmitted ? 'button' : 'submit'}
             >
@@ -935,108 +968,45 @@ const RailMetric = ({
   )
 }
 
-function evaluatePart(
-  part: Question['parts'][number],
-  response: string | undefined,
-  review: QuestionReviewPart,
-): PartResult {
-  if (!response) {
-    return {
-      accentClassName: 'border border-border/70 bg-muted/70 text-foreground',
-      body: 'You left this blank. Read the worked methods below, then compare them to how you would rebuild the answer next time.',
-      status: 'unanswered',
-      title: 'No answer submitted',
-    }
-  }
-
-  switch (review.answerType) {
-    case 'multipleChoice': {
-      const selectedChoice =
-        part.answerMechanism.type === 'multipleChoice'
-          ? part.answerMechanism.choices.find((choice) => choice.id === response)
-          : undefined
-
-      if (review.correctChoiceId === response) {
-        return {
-          accentClassName: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
-          body: 'You selected the best-supported option. Use the worked methods to confirm why the distractors fall away.',
-          status: 'correct',
-          title: 'Correct answer',
-        }
-      }
-
-      return {
-        accentClassName: 'bg-amber-500/12 text-amber-700 dark:text-amber-300',
-        body: selectedChoice
-          ? `You chose "${selectedChoice.text}". Review the worked methods below to see which clue in the prompt should have ruled it out.`
-          : 'Review the worked methods below to compare your selection with the strongest mathematical route.',
-        status: 'incorrect',
-        title: 'Needs review',
-      }
-    }
-    case 'freeTextValidation':
-      return normalizeAnswer(response) === normalizeAnswer(review.correctAnswerText)
-        ? {
-            accentClassName: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
-            body: 'Your submitted response matches the expected answer format for this proof-of-concept review flow.',
-            status: 'correct',
-            title: 'Correct answer',
-          }
-        : {
-            accentClassName: 'bg-amber-500/12 text-amber-700 dark:text-amber-300',
-            body: 'Your final response does not match the expected answer yet. Compare your working against the structured method below.',
-            status: 'incorrect',
-            title: 'Needs review',
-          }
-    case 'selfReport':
-      return response === 'correct'
-        ? {
-            accentClassName: 'bg-emerald-500/12 text-emerald-700 dark:text-emerald-300',
-            body: 'You marked this part as solved. Use the model solution as a final confidence check, especially for any skipped algebra or justification lines.',
-            status: 'correct',
-            title: 'Marked as solved',
-          }
-        : {
-            accentClassName: 'bg-amber-500/12 text-amber-700 dark:text-amber-300',
-            body: 'You marked this part for review. Read both worked methods and focus on where your reasoning diverged from the model solution.',
-            status: 'incorrect',
-            title: 'Marked for review',
-          }
-    default:
-      return {
-        accentClassName: 'border border-border/70 bg-muted/70 text-foreground',
-        body: 'Review the worked solution below.',
-        status: 'unanswered',
-        title: 'Review available',
-      }
-  }
-}
-
 function hasResponse(value: string | undefined) {
   return Boolean(value && value.trim().length > 0)
-}
-
-function normalizeAnswer(value?: string) {
-  return (value ?? '').trim().toLowerCase().replace(/\s+/g, ' ')
 }
 
 function getChoiceLetter(index: number) {
   return String.fromCharCode(65 + index)
 }
 
-function answerTypeLabel(answerType: Question['parts'][number]['answerMechanism']['type']) {
+function answerTypeLabel(answerType: Question['parts'][number]['response']['type']) {
   switch (answerType) {
     case 'multipleChoice':
       return 'Multiple choice'
-    case 'freeTextValidation':
-      return 'Written answer'
+    case 'shortText':
+      return 'Short text'
     case 'selfReport':
-      return 'Self check'
+      return 'Self report'
     default:
       return 'Answer'
   }
 }
 
 function questionPartLabel(part: Question['parts'][number]) {
-  return part.richText ? 'this part' : 'the question'
+  return part.prompt ? 'this part' : 'the question'
+}
+
+function formatSubTopicLabel(subTopic: Question['subTopics'][number]) {
+  return `${subTopic.topicName} / ${subTopic.name}`
+}
+
+function shuffleChoices<T>(choices: T[]) {
+  const shuffledChoices = [...choices]
+
+  for (let index = shuffledChoices.length - 1; index > 0; index -= 1) {
+    const nextIndex = Math.floor(Math.random() * (index + 1))
+    const currentChoice = shuffledChoices[index]
+
+    shuffledChoices[index] = shuffledChoices[nextIndex] as T
+    shuffledChoices[nextIndex] = currentChoice as T
+  }
+
+  return shuffledChoices
 }

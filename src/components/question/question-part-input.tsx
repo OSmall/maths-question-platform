@@ -10,16 +10,16 @@ type QuestionPartInputProps = {
 }
 
 export const QuestionPartInput = ({ part }: QuestionPartInputProps) => {
-  const answerMechanism = part.answerMechanism
+  const response = part.response
 
-  switch (answerMechanism.type) {
+  switch (response.type) {
     case 'multipleChoice':
-      return <QuestionMultipleChoiceInput answerMechanism={answerMechanism} partId={part.id} />
+      return <QuestionMultipleChoiceInput response={response} partId={part.id} />
     case 'selfReport':
       return <QuestionSelfReportInput />
-    case 'freeTextValidation':
+    case 'shortText':
       return <QuestionFreeTextInput />
     default:
-      assertNever(answerMechanism)
+      assertNever(response)
   }
 }

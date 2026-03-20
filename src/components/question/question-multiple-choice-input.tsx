@@ -1,15 +1,15 @@
 import { Card, CardContent } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
-import type { MultipleChoiceAnswerMechanism } from '@/lib/domain/question'
+import type { MultipleChoiceResponse } from '@/lib/domain/question'
 
 type QuestionMultipleChoiceInputProps = {
-  answerMechanism: MultipleChoiceAnswerMechanism
+  response: MultipleChoiceResponse
   partId: string
 }
 
 export const QuestionMultipleChoiceInput = ({
-  answerMechanism,
+  response,
   partId,
 }: QuestionMultipleChoiceInputProps) => {
   return (
@@ -19,7 +19,7 @@ export const QuestionMultipleChoiceInput = ({
       </p>
 
       <RadioGroup className="gap-2">
-        {answerMechanism.choices.map((choice) => {
+        {response.choices.map((choice) => {
           const choiceId = `question-${partId}-${choice.id}`
 
           return (

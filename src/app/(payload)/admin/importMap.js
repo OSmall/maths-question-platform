@@ -1,3 +1,5 @@
+import { SubTopicNameCell as SubTopicNameCell_e3eea0f68fa844a4681869ee24a62df6 } from '../../../payload/components/admin/sub-topic-name-cell'
+import { SubTopicEditTitle as SubTopicEditTitle_ebe9b8d419736b5be74c0379aa8fc2cd } from '../../../payload/components/admin/sub-topic-edit-title'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -24,6 +26,8 @@ import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
 
 export const importMap = {
+  "/components/admin/sub-topic-name-cell#SubTopicNameCell": SubTopicNameCell_e3eea0f68fa844a4681869ee24a62df6,
+  "/components/admin/sub-topic-edit-title#SubTopicEditTitle": SubTopicEditTitle_ebe9b8d419736b5be74c0379aa8fc2cd,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,

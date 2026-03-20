@@ -30,10 +30,10 @@ export const QuestionPartCard = ({ index, part }: QuestionPartCardProps) => {
       </CardHeader>
 
       <CardContent className="space-y-5 pb-6">
-        {part.richText ? (
+        {part.prompt ? (
           <RichTextRenderer
             className="text-sm leading-7 text-slate-700 dark:text-slate-200"
-            data={part.richText}
+            data={part.prompt}
           />
         ) : null}
 

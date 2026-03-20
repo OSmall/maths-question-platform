@@ -17,7 +17,7 @@ export const QuestionPromptCard = ({ question }: QuestionPromptCardProps) => {
       <CardContent className="pb-6">
         <RichTextRenderer
           className="text-base leading-7 text-slate-800 dark:text-slate-100"
-          data={question.richText}
+          data={question.prompt}
         />
       </CardContent>
     </Card>

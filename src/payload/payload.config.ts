@@ -9,7 +9,8 @@ import sharp from 'sharp'
 import { Users } from '@/payload/collections/users'
 import { Media } from '@/payload/collections/media'
 import { Question } from '@/payload/collections/question'
-import { Aspect } from '@/payload/collections/aspect'
+import { Topic } from '@/payload/collections/topic'
+import { SubTopic } from '@/payload/collections/sub-topic'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -21,7 +22,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Question, Aspect],
+  collections: [Users, Media, Topic, SubTopic, Question],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
@@ -31,6 +32,7 @@ export default buildConfig({
     pool: {
       connectionString: process.env.DATABASE_URL || '',
     },
+    push: false,
   }),
   sharp,
   plugins: [
