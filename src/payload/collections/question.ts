@@ -135,7 +135,7 @@ function validateResponseGroup(value: unknown) {
   }
 }
 
-const responseField: Field = {
+const responseField = {
   name: 'response',
   type: 'group',
   validate: (value) => validateResponseGroup(value),
@@ -225,7 +225,7 @@ const responseField: Field = {
       fields: [],
     },
   ],
-}
+} satisfies Field
 
 export const Question: CollectionConfig = {
   slug: 'question',

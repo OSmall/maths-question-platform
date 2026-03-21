@@ -1,20 +1,41 @@
 import { RefreshRouteOnSave } from '@/components/live-preview/refresh-route-on-save'
 import { QuestionPreviewWarning } from '@/components/question/question-preview-warning'
 import { QuestionRenderer } from '@/components/question/question-renderer'
-import { submitQuestionReview } from '@/lib/actions'
 import { QuestionNotRenderableError } from '@/lib/errors'
 import { getQuestionById } from '@/lib/service/question-service'
 import { draftMode } from 'next/headers'
-import { notFound } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 
 type QuestionPageProps = {
   params: Promise<{
     id: string
   }>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default async function QuestionPage({ params }: QuestionPageProps) {
-  const [{ id }, { isEnabled: isDraftMode }] = await Promise.all([params, draftMode()])
+export default async function QuestionPage({ params, searchParams }: QuestionPageProps) {
+  const [{ id }, resolvedSearchParams, { isEnabled: isDraftMode }] = await Promise.all([
+    params,
+    searchParams,
+    draftMode(),
+  ])
+
+  const seed = getSingleSearchParam(resolvedSearchParams.seed)
+
+  if (!seed) {
+    const seededSearchParams = new URLSearchParams()
+
+    for (const [key, value] of Object.entries(resolvedSearchParams)) {
+      if (Array.isArray(value)) {
+        value.forEach((entry) => seededSearchParams.append(key, entry))
+      } else if (value != null) {
+        seededSearchParams.set(key, value)
+      }
+    }
+
+    seededSearchParams.set('seed', crypto.randomUUID())
+    redirect(`/question/${id}?${seededSearchParams.toString()}`)
+  }
 
   const questionResult = await getQuestionById(id, { draft: isDraftMode })
 
@@ -26,7 +47,7 @@ export default async function QuestionPage({ params }: QuestionPageProps) {
           <QuestionRenderer
             isDraftMode={isDraftMode}
             question={question}
-            reviewQuestionAction={submitQuestionReview}
+            searchParams={resolvedSearchParams}
           />
         </div>
       </div>
@@ -50,4 +71,12 @@ export default async function QuestionPage({ params }: QuestionPageProps) {
       notFound()
     },
   )
+}
+
+function getSingleSearchParam(value: string | string[] | undefined) {
+  if (Array.isArray(value)) {
+    return value.at(-1)
+  }
+
+  return value
 }

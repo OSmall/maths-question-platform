@@ -7,3 +7,12 @@ export type QuestionSessionMeta = {
   sessionProgressTotal: number
   timeSpentLabel: string
 }
+
+export type QuestionReviewSummary = {
+  accuracyPercent: number
+  answeredCount: number
+  completionPercent: number
+  correctCount: number
+  incorrectCount: number
+  unansweredCount: number
+}

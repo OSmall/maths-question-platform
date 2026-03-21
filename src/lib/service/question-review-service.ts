@@ -34,7 +34,6 @@ function buildQuestionReviewPayload(
   responses: SubmittedQuestionResponses,
 ): QuestionReviewPayload {
   return {
-    nextQuestionLabel: `Question ${questionReviewSource.id + 1}`,
     parts: Object.fromEntries(
       questionReviewSource.parts.map((part) => [
         part.id,

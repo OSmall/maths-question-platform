@@ -19,7 +19,7 @@
   `bun run generate:importmap` when needed.
 - For Payload schema or data-model changes, create a migration with `bun run migrate:create`.
   - When pushing a commit that contains these Payload changes, the preview deployment needs this migration created to
-  deploy properly.
+    deploy properly.
 
 ## Project Code Shape
 
@@ -27,7 +27,7 @@
   `notFound()`.
 - The service layer in `src/app/lib/service` contains just business logic with portability from any frameworks.
   - It is designed that it could be migrated between frameworks and between backends if need-be.
-  - `neverthrow` is used as the return type to convey data values as well as business logic errors.
+  - `neverthrow` Result is used as the return type to convey data values as well as business logic errors.
 - The repository layer sits in-between the service layer and the Payload CMS backend. This exists for mocking purposes
   in tests.
 - The domain contains data types that are used for the business logic. Translation between the backend types and the
@@ -41,6 +41,14 @@
   - Styling of the components are handled at the project level.
 - Dark mode and light mode UX should both be considered when designing UI. They should both look good.
 - Prefer the use of server components whenever possible
+- Make everything React Server Components (RSC) if possible. Reserve client components for tiny client-only behavior,
+  e.g. a submit button showing pending state during a server action.
+- If a POC depends on state that does not exist yet, do not invent client-side state. Pass temporary state through
+  searchParams in a shape that can later be replaced by DB-backed state.
+- Keep services/domain canonical. After canonical data is fetched, server UI components may decide display concerns such
+  as seeded ordering and SSR review rendering.
+- Prefer server actions for sending client data to the server.
+  - Always use `next-safe-action` to validate incoming data to server actions and business logic like auth.
 
 ## Official Docs
 

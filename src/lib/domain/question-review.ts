@@ -16,23 +16,7 @@ export type QuestionReviewPart = {
 }
 
 export type QuestionReviewPayload = {
-  nextQuestionLabel: string
   parts: Record<string, QuestionReviewPart>
 }
 
 export type SubmittedQuestionResponses = Record<string, string>
-
-export type ReviewQuestionSubmissionRequest = {
-  questionId: number
-  responses: SubmittedQuestionResponses
-}
-
-export type ReviewQuestionSubmissionResult =
-  | {
-      ok: true
-      reviewPayload: QuestionReviewPayload
-    }
-  | {
-      message: string
-      ok: false
-    }
