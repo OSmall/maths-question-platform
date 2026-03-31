@@ -1,7 +1,7 @@
 import { err, ok, type Result } from 'neverthrow'
-import { type ZodError, type ZodType, z } from 'zod'
+import { z, type ZodError, type ZodType } from 'zod'
 
-export function parseWithSchema<TSchema extends ZodType>(
+export function parseToResult<TSchema extends ZodType>(
   schema: TSchema,
   input: unknown,
 ): Result<z.output<TSchema>, ZodError> {

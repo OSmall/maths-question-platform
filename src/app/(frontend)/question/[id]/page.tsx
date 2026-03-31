@@ -2,7 +2,9 @@ import { RefreshRouteOnSave } from '@/components/live-preview/refresh-route-on-s
 import { QuestionPreviewWarning } from '@/components/question/question-preview-warning'
 import { QuestionRenderer } from '@/components/question/question-renderer'
 import { QuestionNotRenderableError } from '@/lib/errors'
+import { getQuestionSubmissionEvaluation } from '@/lib/service/question-evaluation-service'
 import { getQuestionById } from '@/lib/service/question-service'
+import { Result } from 'neverthrow'
 import { draftMode } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
 
@@ -13,15 +15,23 @@ type QuestionPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>
 }
 
-export default async function QuestionPage({ params, searchParams }: QuestionPageProps) {
+export default async function QuestionPage({
+  params,
+  searchParams, // only using searchParams for now as a POC to replicate persistence until the "StudySession" collection is implemented
+}: QuestionPageProps) {
   const [{ id }, resolvedSearchParams, { isEnabled: isDraftMode }] = await Promise.all([
     params,
     searchParams,
     draftMode(),
   ])
 
-  const seed = getSingleSearchParam(resolvedSearchParams.seed)
+  const questionId = Number(id)
+  if (isNaN(questionId)) {
+    console.warn(`Question id [${id}] is not a number, redirecting to Not Found page`)
+    notFound()
+  }
 
+  const seed = getSingleSearchParam(resolvedSearchParams.seed)
   if (!seed) {
     const seededSearchParams = new URLSearchParams()
 
@@ -38,16 +48,20 @@ export default async function QuestionPage({ params, searchParams }: QuestionPag
   }
 
   const questionResult = await getQuestionById(id, { draft: isDraftMode })
+  const questionSubmissionEvaluationResult = await getQuestionSubmissionEvaluation(
+    questionId,
+    resolvedSearchParams,
+  )
 
-  return questionResult.match(
-    (question) => (
+  Result.combine([questionResult, questionSubmissionEvaluationResult]).match(
+    ([question, questionSubmissionEvaluation]) => (
       <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] px-4 py-5 dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_28%),linear-gradient(180deg,rgba(12,18,24,0.98),rgba(15,23,42,0.96))] md:px-6 md:py-8">
         {isDraftMode && <RefreshRouteOnSave />}
         <div className="mx-auto flex w-full justify-center">
           <QuestionRenderer
             isDraftMode={isDraftMode}
             question={question}
-            searchParams={resolvedSearchParams}
+            questionSubmissionEvaluation={questionSubmissionEvaluation}
           />
         </div>
       </div>

@@ -1,29 +1,28 @@
 import { Clock3, NotebookPen, Target } from 'lucide-react'
 
 import { Badge } from '@/components/ui/badge'
-import type { Question } from '@/lib/domain/question'
-
-import type { QuestionReviewSummary, QuestionSessionMeta } from './question-study-types'
+import type {
+  RenderableQuestion,
+  RenderableQuestionSubmissionEvaluation,
+} from '@/lib/domain/question'
 
 type QuestionSessionSummaryProps = {
   isDraftMode: boolean
-  question: Question
-  reviewSummary: QuestionReviewSummary | null
-  sessionMeta: QuestionSessionMeta
+  question: RenderableQuestion
+  questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
 }
 
 export const QuestionSessionSummary = ({
   isDraftMode,
   question,
-  reviewSummary,
-  sessionMeta,
+  questionSubmissionEvaluation,
 }: QuestionSessionSummaryProps) => {
-  const completionPercent = reviewSummary?.completionPercent ?? 0
-  const answeredCount = reviewSummary?.answeredCount ?? 0
-  const flaggedCount = sessionMeta.sessionFlaggedCount
-  const activeAccuracyLabel = reviewSummary
-    ? `${reviewSummary.accuracyPercent}% this question`
-    : `${sessionMeta.sessionAccuracyPercent}% so far`
+  const completionPercent = 50
+  const answeredCount = 0
+  const flaggedCount = 0
+  const activeAccuracyLabel = 'active accuracy label'
+  const attemptLabel = 'Attempt #1'
+  const timeSpent = '7:21'
 
   return (
     <>
@@ -31,7 +30,7 @@ export const QuestionSessionSummary = ({
         <div className="rounded-[1.7rem] border border-border/70 bg-card/95 p-4 shadow-[0_18px_36px_-28px_rgba(15,23,42,0.35)] backdrop-blur dark:bg-card/90">
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="outline">
-              {sessionMeta.attemptLabel}
+              {attemptLabel}
             </Badge>
             {isDraftMode ? (
               <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="outline">
@@ -43,7 +42,7 @@ export const QuestionSessionSummary = ({
           <div className="mt-4 flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Study session</p>
-              <p className="text-xl font-semibold text-foreground">Question {question.id}</p>
+              <p className="text-xl font-semibold text-foreground">Question {question.index}</p>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-background/80 px-3 py-2 text-right">
@@ -70,13 +69,9 @@ export const QuestionSessionSummary = ({
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-            <CompactStat icon={Clock3} label="Time" value={sessionMeta.timeSpentLabel} />
+            <CompactStat icon={Clock3} label="Time" value={timeSpent} />
             <CompactStat icon={Target} label="Flagged" value={String(flaggedCount)} />
-            <CompactStat
-              icon={NotebookPen}
-              label="Review"
-              value={reviewSummary ? `${reviewSummary.correctCount} ok` : 'Pending'}
-            />
+            <CompactStat icon={NotebookPen} label="Review" value="Pending" />
           </div>
         </div>
       </section>
@@ -85,7 +80,7 @@ export const QuestionSessionSummary = ({
         <div className="rounded-[1.9rem] border border-border/70 bg-card/95 p-5 shadow-[0_20px_40px_-28px_rgba(15,23,42,0.35)] backdrop-blur dark:bg-card/90">
           <div className="flex flex-wrap items-center gap-2">
             <Badge className="rounded-full px-3 py-1 text-[11px] font-semibold" variant="outline">
-              {sessionMeta.attemptLabel}
+              {attemptLabel}
             </Badge>
             {isDraftMode ? (
               <Badge
@@ -100,7 +95,7 @@ export const QuestionSessionSummary = ({
           <div className="mt-4 space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Study session</p>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Question {question.id}
+              Question {question.index}
             </h2>
             <p className="text-sm leading-6 text-muted-foreground">
               Read, answer, review the worked methods, then continue.
@@ -125,12 +120,8 @@ export const QuestionSessionSummary = ({
 
             <div className="grid gap-2.5 text-sm">
               <RailMetric icon={Target} label="Accuracy" value={activeAccuracyLabel} />
-              <RailMetric icon={Clock3} label="Time spent" value={sessionMeta.timeSpentLabel} />
-              <RailMetric
-                icon={NotebookPen}
-                label="Estimate"
-                value={`${sessionMeta.estimatedMinutes} min`}
-              />
+              <RailMetric icon={Clock3} label="Time spent" value={timeSpent} />
+              <RailMetric icon={NotebookPen} label="Estimate" value="9 min" />
               <RailMetric icon={Target} label="Flagged" value={`${flaggedCount} marked`} />
             </div>
           </div>
@@ -147,10 +138,10 @@ export const QuestionSessionSummary = ({
                   {question.subTopics.map((subTopic) => (
                     <Badge
                       className="rounded-full px-3 py-1 text-xs font-medium"
-                      key={`${subTopic.topicName}-${subTopic.name}`}
+                      key={`${subTopic.topicName}-${subTopic.subtopicName}`}
                       variant="outline"
                     >
-                      {subTopic.topicName} / {subTopic.name}
+                      {subTopic.topicName} / {subTopic.subtopicName}
                     </Badge>
                   ))}
                 </div>
@@ -158,7 +149,7 @@ export const QuestionSessionSummary = ({
             </>
           ) : null}
 
-          {reviewSummary ? (
+          {questionSubmissionEvaluation.isEvaluated ? (
             <>
               <div className="my-5 h-px bg-border/70" />
               <div className="rounded-[1.4rem] border border-border/70 bg-background/75 p-4">
@@ -169,19 +160,13 @@ export const QuestionSessionSummary = ({
                   <p className="flex items-center justify-between gap-3">
                     <span className="text-muted-foreground">Correct</span>
                     <span className="font-semibold text-foreground">
-                      {reviewSummary.correctCount}
+                      {questionSubmissionEvaluation.correctParts}
                     </span>
                   </p>
                   <p className="flex items-center justify-between gap-3">
                     <span className="text-muted-foreground">Needs review</span>
                     <span className="font-semibold text-foreground">
-                      {reviewSummary.incorrectCount}
-                    </span>
-                  </p>
-                  <p className="flex items-center justify-between gap-3">
-                    <span className="text-muted-foreground">Blank</span>
-                    <span className="font-semibold text-foreground">
-                      {reviewSummary.unansweredCount}
+                      {questionSubmissionEvaluation.incorrectParts}
                     </span>
                   </p>
                 </div>
@@ -265,7 +250,7 @@ const RailMetric = ({
   )
 }
 
-function answerTypeLabel(answerType: Question['parts'][number]['response']['type']) {
+function answerTypeLabel(answerType: RenderableQuestion['parts'][number]['response']['type']) {
   switch (answerType) {
     case 'multipleChoice':
       return 'Multiple choice'

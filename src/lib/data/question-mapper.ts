@@ -2,27 +2,30 @@ import { type Result } from 'neverthrow'
 import { z } from 'zod'
 
 import {
-  questionReviewSourceSchema,
-  questionSchema,
-  type QuestionReviewSource,
+  renderableQuestionSchema,
+  type RenderableQuestionSubmissionEvaluation,
+  renderableQuestionSubmissionEvaluationSchema,
 } from '@/lib/domain/question'
 import { QuestionNotRenderableError } from '@/lib/errors'
 import type {
-  PayloadQuestionForAttempt,
-  PayloadQuestionForReview,
+  PayloadQuestionForAttempt as PayloadQuestionForRender,
+  PayloadQuestionForReview as PayloadQuestionForEvaluation,
 } from '@/lib/repository/question-repository'
-import { parseWithSchema } from '@/lib/utils/validation'
+import { parseToResult } from '@/lib/utils/validation'
 import type {
   Question as PayloadQuestion,
   SubTopic as PayloadSubTopicDocument,
 } from '@/payload/payload-types'
 
 type PayloadQuestionToDomainResult = Result<
-  z.output<typeof questionSchema>,
+  z.output<typeof renderableQuestionSchema>,
   QuestionNotRenderableError
 >
 
-type PayloadQuestionToReviewSourceResult = Result<QuestionReviewSource, QuestionNotRenderableError>
+type PayloadQuestionToReviewSourceResult = Result<
+  RenderableQuestionSubmissionEvaluation,
+  QuestionNotRenderableError
+>
 
 type PayloadQuestionPart = PayloadQuestion['parts'][number]
 type PayloadQuestionResponse = PayloadQuestionPart['response'] | undefined
@@ -32,26 +35,26 @@ type PayloadWorkedSolution = NonNullable<
 type PayloadSubTopic = (number | PayloadSubTopicDocument) | null | undefined
 
 export function payloadQuestionToAttempt(
-  payloadQuestion: PayloadQuestionForAttempt,
+  payloadQuestion: PayloadQuestionForRender,
 ): PayloadQuestionToDomainResult {
   const candidateQuestion = payloadQuestionToAttemptCandidate(payloadQuestion)
 
-  return parseWithSchema(questionSchema, candidateQuestion).mapErr(
+  return parseToResult(renderableQuestionSchema, candidateQuestion).mapErr(
     (error) => new QuestionNotRenderableError(error),
   )
 }
 
 export function payloadQuestionToReviewSource(
-  payloadQuestion: PayloadQuestionForReview,
+  payloadQuestion: PayloadQuestionForEvaluation,
 ): PayloadQuestionToReviewSourceResult {
   const candidateQuestion = payloadQuestionToReviewCandidate(payloadQuestion)
 
-  return parseWithSchema(questionReviewSourceSchema, candidateQuestion).mapErr(
+  return parseToResult(renderableQuestionSubmissionEvaluationSchema, candidateQuestion).mapErr(
     (error) => new QuestionNotRenderableError(error),
   )
 }
 
-function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuestionForAttempt) {
+function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuestionForRender) {
   const parts = Array.isArray(payloadQuestion.parts) ? payloadQuestion.parts : []
   const isMultipart = parts.length > 1
 
@@ -67,7 +70,7 @@ function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuestionForAt
   }
 }
 
-function payloadQuestionToReviewCandidate(payloadQuestion: PayloadQuestionForReview) {
+function payloadQuestionToReviewCandidate(payloadQuestion: PayloadQuestionForEvaluation) {
   return {
     id: payloadQuestion.id,
     parts: Array.isArray(payloadQuestion.parts)

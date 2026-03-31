@@ -9,15 +9,15 @@ type SubTopicInput = {
   topic?: number | { id?: number | null } | null
 }
 
-export function normalizeTaxonomyName(value: string) {
+function normalizeTaxonomyName(value: string) {
   return value.trim().replace(/\s+/g, ' ').toLowerCase()
 }
 
-export function formatTaxonomyName(value: string) {
+function formatTaxonomyName(value: string) {
   return value.trim().replace(/\s+/g, ' ')
 }
 
-export function extractRelationshipId(value: number | { id?: number | null } | null | undefined) {
+function extractRelationshipId(value: number | { id?: number | null } | null | undefined) {
   if (typeof value === 'number') {
     return value
   }

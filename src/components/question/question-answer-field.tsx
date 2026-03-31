@@ -1,32 +1,40 @@
+import type {
+  RenderableQuestionPart,
+  RenderableQuestionSubmissionEvaluation,
+} from '@/lib/domain/question'
 import { cn } from '@/lib/utils'
-import type { Question } from '@/lib/domain/question'
 
 type QuestionAnswerFieldProps = {
-  part: Question['parts'][number]
-  response: string | undefined
-  reviewMode: boolean
+  questionPart: RenderableQuestionPart
+  questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
   seed: string
 }
 
 export const QuestionAnswerField = ({
-  part,
-  response,
-  reviewMode,
+  questionPart,
+  questionSubmissionEvaluation,
   seed,
 }: QuestionAnswerFieldProps) => {
-  const fieldName = `a.${part.id}`
+  const fieldName = `a.${questionPart.id}`
+  const questionSubmissionEvaluationPart = questionSubmissionEvaluation.parts[questionPart.id]
+  const isEvaluated = questionSubmissionEvaluation.isEvaluated
 
-  switch (part.response.type) {
+  switch (questionPart.response.type) {
     case 'multipleChoice': {
-      const displayedChoices = part.response.shuffle
-        ? getSeededChoices(part.response.choices, `${seed}:${part.id}`)
-        : part.response.choices
+      if (questionSubmissionEvaluationPart.type !== 'multipleChoice')
+        throw new Error(
+          `Expected questionSubmissionEvaluationPart to be multipleChoice but found ${questionSubmissionEvaluationPart.type}`,
+        ) // todo think about improving this error handling or aligning the types such that the response types are equal
+      const choiceObjs = Object.values(questionPart.response.choices)
+      const displayedChoices = questionPart.response.shuffle
+        ? shuffleChoices(choiceObjs, `${seed}:${questionPart.id}`)
+        : choiceObjs
 
       return (
         <div className="space-y-3">
           {displayedChoices.map((choice, index) => {
-            const choiceId = `${part.id}-${choice.id}`
-            const isSelected = response === choice.id
+            const choiceId = `${questionPart.id}-${choice.id}`
+            const isSelected = questionSubmissionEvaluationPart.givenChoiceId !== undefined
 
             return (
               <label
@@ -34,7 +42,7 @@ export const QuestionAnswerField = ({
                   'group flex cursor-pointer items-start gap-4 rounded-4xl border border-border/70 bg-background/80 px-4 py-4 transition-all hover:border-primary/35 hover:bg-primary/5',
                   isSelected &&
                     'border-primary/50 bg-primary/8 shadow-[0_12px_30px_-24px_rgba(16,185,129,0.75)]',
-                  reviewMode && 'cursor-default opacity-85',
+                  isEvaluated && 'cursor-default opacity-85',
                 )}
                 htmlFor={choiceId}
                 key={choice.id}
@@ -50,7 +58,7 @@ export const QuestionAnswerField = ({
                 <input
                   className="mt-1 size-4 accent-primary"
                   defaultChecked={isSelected}
-                  disabled={reviewMode}
+                  disabled={isEvaluated}
                   id={choiceId}
                   name={fieldName}
                   type="radio"
@@ -63,16 +71,24 @@ export const QuestionAnswerField = ({
       )
     }
     case 'shortText':
+      if (questionSubmissionEvaluationPart.type !== 'shortText')
+        throw new Error(
+          `Expected questionSubmissionEvaluationPart to be shortText but found ${questionSubmissionEvaluationPart.type}`,
+        ) // todo think about improving this error handling or aligning the types such that the response types are equal
       return (
         <textarea
           className="min-h-32 w-full rounded-[1.3rem] border border-border/70 bg-background/85 px-4 py-3 text-base leading-7 text-foreground placeholder:text-muted-foreground focus:border-primary/45 focus:outline-none disabled:cursor-default disabled:opacity-85"
-          defaultValue={response ?? ''}
-          disabled={reviewMode}
+          defaultValue={questionSubmissionEvaluationPart.givenResponse}
+          disabled={isEvaluated}
           name={fieldName}
           placeholder="Type your final answer"
         />
       )
     case 'selfReport':
+      if (questionSubmissionEvaluationPart.type !== 'selfReport')
+        throw new Error(
+          `Expected questionSubmissionEvaluationPart to be selfReport but found ${questionSubmissionEvaluationPart.type}`,
+        ) // todo think about improving this error handling or aligning the types such that the response types are equal
       return (
         <div className="grid gap-3 sm:grid-cols-2">
           {[
@@ -89,8 +105,8 @@ export const QuestionAnswerField = ({
               value: 'incorrect',
             },
           ].map((option) => {
-            const optionId = `${part.id}-${option.value}`
-            const isSelected = response === option.value
+            const optionId = `${questionPart.id}-${option.value}`
+            const isSelected = questionSubmissionEvaluationPart.givenResponse !== undefined
 
             return (
               <label
@@ -99,7 +115,7 @@ export const QuestionAnswerField = ({
                   isSelected
                     ? 'border-primary/50 bg-primary/10 text-foreground'
                     : 'border-border/70 bg-background/80 text-foreground hover:bg-accent',
-                  reviewMode && 'cursor-default opacity-85',
+                  isEvaluated && 'cursor-default opacity-85',
                 )}
                 htmlFor={optionId}
                 key={option.value}
@@ -107,7 +123,7 @@ export const QuestionAnswerField = ({
                 <input
                   className="mt-1 size-4 accent-primary"
                   defaultChecked={isSelected}
-                  disabled={reviewMode}
+                  disabled={isEvaluated}
                   id={optionId}
                   name={fieldName}
                   type="radio"
@@ -127,7 +143,7 @@ export const QuestionAnswerField = ({
   }
 }
 
-function getSeededChoices<T extends { id: string }>(choices: T[], seed: string) {
+function shuffleChoices<T extends { id: string }>(choices: T[], seed: string) {
   return [...choices].sort((left, right) => {
     const leftScore = hashString(`${seed}:${left.id}`)
     const rightScore = hashString(`${seed}:${right.id}`)

@@ -1,4 +1,4 @@
-import { fetchQuestionByIdAndDraft } from '@/lib/repository/question-repository'
+import { fetchRenderableQuestionByIdAndDraft } from '@/lib/repository/question-repository'
 import { err, ok } from 'neverthrow'
 import { NotANumberError } from '@/lib/errors'
 
@@ -14,5 +14,5 @@ export function getQuestionById(id: string, options: GetQuestionByIdOptions = {}
       const idNumber = Number(id)
       return isNaN(idNumber) ? err(new NotANumberError(id)) : ok(idNumber)
     })
-    .asyncAndThen((idNumber) => fetchQuestionByIdAndDraft(idNumber, isDraft))
+    .asyncAndThen((idNumber) => fetchRenderableQuestionByIdAndDraft(idNumber, isDraft))
 }

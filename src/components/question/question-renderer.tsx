@@ -1,133 +1,147 @@
-import type { Question } from '@/lib/domain/question'
+import { submitQuestionAnswersFormAction } from '@/app/actions/question-actions'
+import { QuestionActionBar } from '@/components/question/question-action-bar'
+import { QuestionAnswerField } from '@/components/question/question-answer-field'
+import { answerTypeLabel, QuestionHeader } from '@/components/question/question-header'
+import { QuestionReviewPanel } from '@/components/question/question-review-panel'
+import { QuestionSessionSummary } from '@/components/question/question-session-summary'
+import { QuestionToggleButton } from '@/components/question/question-toggle-button'
+import { RichTextRenderer } from '@/components/rich-text/rich-text-renderer'
+import { Badge } from '@/components/ui/badge'
 import type {
-  QuestionReviewPayload,
-  SubmittedQuestionResponses,
-} from '@/lib/domain/question-review'
-import { reviewQuestionSubmissionById } from '@/lib/service/question-review-service'
-
-import { QuestionStudyExperience } from './question-study-experience'
-import type { QuestionReviewSummary, QuestionSessionMeta } from './question-study-types'
+  RenderableQuestion,
+  RenderableQuestionSubmissionEvaluation,
+} from '@/lib/domain/question'
 
 type QuestionRendererProps = {
-  isDraftMode?: boolean
-  question: Question
-  searchParams: Record<string, string | string[] | undefined>
+  isDraftMode: boolean
+  question: RenderableQuestion
+  questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
 }
 
 export const QuestionRenderer = async ({
-  isDraftMode = false,
+  isDraftMode,
   question,
-  searchParams,
+  questionSubmissionEvaluation,
 }: QuestionRendererProps) => {
-  const submittedResponses = sanitizeResponses(question, decodeResponses(searchParams))
-  const isSubmitted = getSingleSearchParam(searchParams.submitted) === '1'
-  const reviewResult = isSubmitted
-    ? await reviewQuestionSubmissionById(question.id, submittedResponses, { draft: isDraftMode })
-    : null
-
-  const reviewPayload =
-    reviewResult?.match(
-      (payload) => payload,
-      () => null,
-    ) ?? null
-
-  const reviewError =
-    reviewResult?.match(
-      () => null,
-      (error) => error.message,
-    ) ?? null
-
-  const reviewSummary = buildReviewSummary(question, submittedResponses, reviewPayload)
-
   return (
-    <QuestionStudyExperience
-      isDraftMode={isDraftMode}
-      question={question}
-      responses={submittedResponses}
-      reviewError={reviewError}
-      reviewPayload={reviewPayload}
-      reviewSummary={reviewSummary}
-      seed={getSingleSearchParam(searchParams.seed) ?? ''}
-      sessionMeta={buildSessionMeta(question)}
-    />
+    <form action={submitQuestionAnswersFormAction} className="mx-auto w-full max-w-310">
+      <input name="questionId" type="hidden" value={question.index} />
+      <input name="seed" type="hidden" value={question.seed} />
+
+      <div className="flex flex-col gap-4 lg:gap-6">
+        <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
+          <QuestionSessionSummary
+            isDraftMode={isDraftMode}
+            question={question}
+            questionSubmissionEvaluation={questionSubmissionEvaluation}
+          />
+
+          <div className="min-w-0 space-y-4 lg:space-y-5">
+            <article className="overflow-hidden rounded-[2rem] border border-border/70 bg-card/95 shadow-[0_20px_50px_-28px_rgba(15,23,42,0.35)] backdrop-blur dark:border-border/70 dark:bg-card/90">
+              <QuestionHeader
+                isDraftMode={isDraftMode}
+                question={question}
+                answeredParts={questionSubmissionEvaluation.answeredParts}
+              />
+
+              {question.parts.map((part, index) => {
+                return (
+                  <div key={part.id}>
+                    <section
+                      className="scroll-mt-28 px-5 py-6 sm:px-8 sm:py-7"
+                      id={`part-${part.id}`}
+                      style={{ contentVisibility: 'auto', containIntrinsicSize: '420px' }}
+                    >
+                      <div className="space-y-5">
+                        <div className="flex flex-wrap items-start justify-between gap-3">
+                          <div className="space-y-2">
+                            {question.parts.length > 1 ? (
+                              <div className="inline-flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+                                <span className="flex size-6 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
+                                  {index + 1}
+                                </span>
+                                Part {index + 1}
+                              </div>
+                            ) : null}
+
+                            {part.prompt ? (
+                              <RichTextRenderer
+                                className="text-base leading-8 text-foreground/90 sm:text-lg [&_p:last-child]:mb-0"
+                                data={part.prompt}
+                              />
+                            ) : question.parts.length > 1 ? null : (
+                              <p className="max-w-2xl text-sm leading-7 text-muted-foreground sm:text-base">
+                                Choose the response that best matches your working, then review the
+                                complete solution after submission.
+                              </p>
+                            )}
+                          </div>
+
+                          <QuestionToggleButton
+                            activeClassName="border-primary/25 bg-primary/10 text-foreground hover:bg-primary/15"
+                            activeLabel="Flagged"
+                            className="shrink-0"
+                            icon="flag"
+                            inactiveLabel="Flag"
+                          />
+                        </div>
+
+                        <div className="rounded-[1.6rem] border border-border/70 bg-background/75 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] sm:p-4 dark:bg-background/35 dark:shadow-none">
+                          <div className="space-y-3 rounded-[1.2rem] border border-border/50 bg-card/80 p-3 sm:p-4">
+                            <div className="flex flex-wrap items-center justify-between gap-2">
+                              <div>
+                                <p className="text-sm font-semibold text-foreground">Your answer</p>
+                                <p className="text-sm text-muted-foreground">
+                                  {part.response.type === 'multipleChoice'
+                                    ? 'Pick one option. The entire question is checked in one submission.'
+                                    : part.response.type === 'shortText'
+                                      ? 'Enter your final answer. You can still submit blank parts.'
+                                      : 'Mark whether you solved this confidently before you review the model solution.'}
+                                </p>
+                              </div>
+
+                              <Badge
+                                className="rounded-full px-3 py-1 text-[11px] font-semibold"
+                                variant="outline"
+                              >
+                                {answerTypeLabel(part.response.type)}
+                              </Badge>
+                            </div>
+
+                            <QuestionAnswerField
+                              questionPart={part}
+                              questionSubmissionEvaluation={questionSubmissionEvaluation}
+                              seed={question.seed}
+                            />
+                          </div>
+                        </div>
+
+                        {questionSubmissionEvaluation.isEvaluated ? (
+                          <QuestionReviewPanel
+                            questionPart={part}
+                            questionSubmissionEvaluatedPart={
+                              questionSubmissionEvaluation.parts[part.id]
+                            }
+                          />
+                        ) : null}
+                      </div>
+                    </section>
+
+                    {index < question.parts.length - 1 ? (
+                      <div className="h-px bg-border/70" />
+                    ) : null}
+                  </div>
+                )
+              })}
+            </article>
+
+            <QuestionActionBar
+              question={question}
+              questionSubmissionEvaluation={questionSubmissionEvaluation}
+            />
+          </div>
+        </div>
+      </div>
+    </form>
   )
-}
-
-function getSingleSearchParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value.at(-1)
-  }
-
-  return value
-}
-
-function decodeResponses(searchParams: Record<string, string | string[] | undefined>) {
-  const responses: SubmittedQuestionResponses = {}
-
-  for (const [key, value] of Object.entries(searchParams)) {
-    if (!key.startsWith('a.')) {
-      continue
-    }
-
-    const partId = key.slice(2)
-    const submittedValue = getSingleSearchParam(value)
-
-    if (!partId || !submittedValue) {
-      continue
-    }
-
-    responses[partId] = submittedValue
-  }
-
-  return responses
-}
-
-function sanitizeResponses(question: Question, responses: SubmittedQuestionResponses) {
-  const allowedPartIds = new Set(question.parts.map((part) => part.id))
-
-  return Object.fromEntries(
-    Object.entries(responses).filter(
-      ([partId, value]) => allowedPartIds.has(partId) && value.trim(),
-    ),
-  ) as SubmittedQuestionResponses
-}
-
-function buildReviewSummary(
-  question: Question,
-  responses: SubmittedQuestionResponses,
-  reviewPayload: QuestionReviewPayload | null,
-): QuestionReviewSummary | null {
-  if (!reviewPayload) {
-    return null
-  }
-
-  const results = Object.values(reviewPayload.parts)
-  const correctCount = results.filter((result) => result.status === 'correct').length
-  const incorrectCount = results.filter((result) => result.status === 'incorrect').length
-  const unansweredCount = results.filter((result) => result.status === 'unanswered').length
-  const answeredCount = question.parts.filter((part) => Boolean(responses[part.id]?.trim())).length
-
-  return {
-    accuracyPercent: Math.round((correctCount / question.parts.length) * 100),
-    answeredCount,
-    completionPercent: Math.round((answeredCount / question.parts.length) * 100),
-    correctCount,
-    incorrectCount,
-    unansweredCount,
-  }
-}
-
-function buildSessionMeta(question: Question): QuestionSessionMeta {
-  const sessionProgressCurrent = ((question.id + question.parts.length) % 8) + 4
-  const sessionProgressTotal = Math.max(sessionProgressCurrent + 7, 20)
-
-  return {
-    attemptLabel: `Attempt #${((question.id + 6) % 9) + 1}`,
-    estimatedMinutes: Math.max(4, question.parts.length * 3),
-    sessionAccuracyPercent: 84,
-    sessionFlaggedCount: question.parts.length > 1 ? 1 : 0,
-    sessionProgressCurrent,
-    sessionProgressTotal,
-    timeSpentLabel: `${String(question.parts.length + 5).padStart(2, '0')}:${String((question.id * 7) % 60).padStart(2, '0')}`,
-  }
 }
