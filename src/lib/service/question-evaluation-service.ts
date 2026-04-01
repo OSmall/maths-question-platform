@@ -22,13 +22,14 @@ export function getQuestionSubmissionEvaluation(
 
   if (!isSubmitted) {
     return fetchQuestionPartResponseTypes(questionId)
-      .map((questionPartResponseTypes) =>
-        buildQuestionParts(questionPartResponseTypes, parsedAnswers),
-      )
-      .andThen((parts) =>
+      .map((questionPartResponseTypes) => ({
+        answeredParts: countAnsweredQuestionParts(questionPartResponseTypes, parsedAnswers),
+        parts: buildUnevaluatedQuestionParts(questionPartResponseTypes, parsedAnswers),
+      }))
+      .andThen(({ answeredParts, parts }) =>
         parseToResult(renderableQuestionSubmissionEvaluationSchema, {
           isEvaluated: false,
-          answeredParts: Object.keys(parsedAnswers).length,
+          answeredParts,
           parts,
         }),
       )
@@ -41,30 +42,35 @@ export function getQuestionSubmissionEvaluation(
           R.map(([partId, part]) => [partId, part.type] as const),
           R.fromEntries(),
         )
+
+        assertAllQuestionPartsAnswered(questionId, questionPartResponseTypes, parsedAnswers)
+
         const submittedParts = buildQuestionParts(questionPartResponseTypes, parsedAnswers)
         return buildPartsReadyForEvaluation(submittedParts, enrichment)
       })
-      .andThen((partsReadyForEvaluation) => {
+      .map((partsReadyForEvaluation) => {
         const evaluatedParts = evaluateAnswers(partsReadyForEvaluation)
-        const answeredParts = R.pipe(
-          parsedAnswers,
-          R.keys(),
-          R.length(),
-        )
+        const answeredParts = R.pipe(evaluatedParts, R.keys(), R.length())
         const correctParts = R.pipe(
           evaluatedParts,
           R.values(),
-          R.sumBy((part) => part.isCorrect ? 1 : 0),
+          R.sumBy((part) => (part.isCorrect ? 1 : 0)),
         )
         const incorrectParts = answeredParts - correctParts
-        return parseToResult(renderableQuestionSubmissionEvaluationSchema, {
+        return {
           isEvaluated: true,
           answeredParts,
           correctParts,
           incorrectParts,
           parts: evaluatedParts,
-        })
+        }
       })
+      .andTee((candidate) =>
+        console.debug(`question evaluation candidate object is ${JSON.stringify(candidate)}`),
+      )
+      .andThen((candidate) =>
+        parseToResult(renderableQuestionSubmissionEvaluationSchema, candidate),
+      )
   }
 }
 
@@ -85,6 +91,20 @@ type SubmittedPart =
   | {
       type: 'multipleChoice'
       givenChoiceId: string
+    }
+
+type UnevaluatedPart =
+  | {
+      type: 'shortText'
+      givenResponse?: string
+    }
+  | {
+      type: 'selfReport'
+      givenResponse?: boolean
+    }
+  | {
+      type: 'multipleChoice'
+      givenChoiceId?: string
     }
 
 type EvaluationEnrichmentPart =
@@ -146,12 +166,12 @@ function evaluatePartAnswer(part: PartReadyForEvaluation) {
   } else if (part.type === 'shortText') {
     return {
       ...part,
-      isCorrect: part.correctResponses.includes(part.givenResponse)
+      isCorrect: part.correctResponses.includes(part.givenResponse),
     }
   } else if (part.type === 'multipleChoice') {
     return {
       ...part,
-      isCorrect: part.correctChoiceId === part.givenChoiceId
+      isCorrect: part.correctChoiceId === part.givenChoiceId,
     }
   } else {
     assertNever(part)
@@ -204,6 +224,78 @@ function buildQuestionParts(
     }),
     R.fromEntries(),
   )
+}
+
+function buildUnevaluatedQuestionParts(
+  questionPartResponseTypes: Record<string, QuestionPartResponseType>,
+  partIdToGivenAnswer: Record<string, string>,
+) {
+  return R.pipe(
+    questionPartResponseTypes,
+    R.entries(),
+    R.map(([partId, partResponseType]) => {
+      const givenAnswer = partIdToGivenAnswer[partId]
+
+      if (partResponseType === 'shortText') {
+        return [
+          partId,
+          {
+            type: partResponseType,
+            ...(givenAnswer === undefined ? {} : { givenResponse: givenAnswer }),
+          },
+        ] as const
+      } else if (partResponseType === 'selfReport') {
+        return [
+          partId,
+          {
+            type: partResponseType,
+            ...(givenAnswer === undefined ? {} : { givenResponse: givenAnswer === 'correct' }),
+          },
+        ] as const
+      } else if (partResponseType === 'multipleChoice') {
+        return [
+          partId,
+          {
+            type: partResponseType,
+            ...(givenAnswer === undefined ? {} : { givenChoiceId: givenAnswer }),
+          },
+        ] as const
+      } else {
+        assertNever(partResponseType)
+      }
+    }),
+    R.fromEntries(),
+  ) satisfies Record<string, UnevaluatedPart>
+}
+
+function countAnsweredQuestionParts(
+  questionPartResponseTypes: Record<string, QuestionPartResponseType>,
+  parsedAnswers: Record<string, string>,
+) {
+  return R.pipe(
+    questionPartResponseTypes,
+    R.keys(),
+    R.filter((partId) => parsedAnswers[partId] !== undefined),
+    R.length(),
+  )
+}
+
+function assertAllQuestionPartsAnswered(
+  questionId: number,
+  questionPartResponseTypes: Record<string, QuestionPartResponseType>,
+  parsedAnswers: Record<string, string>,
+) {
+  const missingPartIds = R.pipe(
+    questionPartResponseTypes,
+    R.keys(),
+    R.filter((partId) => parsedAnswers[partId] === undefined),
+  )
+
+  if (missingPartIds.length > 0) {
+    throw new Error(
+      `Submitted question ${questionId} is missing answers for parts: ${missingPartIds.join(', ')}`,
+    )
+  }
 }
 
 function parseParam(value: string | string[] | undefined) {

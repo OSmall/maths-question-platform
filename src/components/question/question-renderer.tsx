@@ -23,9 +23,14 @@ export const QuestionRenderer = async ({
   question,
   questionSubmissionEvaluation,
 }: QuestionRendererProps) => {
+  console.debug(`question given to QuestionRenderer: ${JSON.stringify(question)}`)
+  console.debug(
+    `questionSubmissionEvaluation given to QuestionRenderer: ${JSON.stringify(questionSubmissionEvaluation)}`,
+  )
+
   return (
     <form action={submitQuestionAnswersFormAction} className="mx-auto w-full max-w-310">
-      <input name="questionId" type="hidden" value={question.index} />
+      <input name="questionId" type="hidden" value={question.id} />
       <input name="seed" type="hidden" value={question.seed} />
 
       <div className="flex flex-col gap-4 lg:gap-6">

@@ -1,6 +1,4 @@
 import { type Result } from 'neverthrow'
-import { z } from 'zod'
-
 import {
   renderableQuestionSchema,
   type RenderableQuestionSubmissionEvaluation,
@@ -16,11 +14,7 @@ import type {
   Question as PayloadQuestion,
   SubTopic as PayloadSubTopicDocument,
 } from '@/payload/payload-types'
-
-type PayloadQuestionToDomainResult = Result<
-  z.output<typeof renderableQuestionSchema>,
-  QuestionNotRenderableError
->
+import * as R from 'remeda'
 
 type PayloadQuestionToReviewSourceResult = Result<
   RenderableQuestionSubmissionEvaluation,
@@ -34,9 +28,7 @@ type PayloadWorkedSolution = NonNullable<
 >
 type PayloadSubTopic = (number | PayloadSubTopicDocument) | null | undefined
 
-export function payloadQuestionToAttempt(
-  payloadQuestion: PayloadQuestionForRender,
-): PayloadQuestionToDomainResult {
+export function payloadQuestionToAttempt(payloadQuestion: PayloadQuestionForRender) {
   const candidateQuestion = payloadQuestionToAttemptCandidate(payloadQuestion)
 
   return parseToResult(renderableQuestionSchema, candidateQuestion).mapErr(
@@ -54,12 +46,14 @@ export function payloadQuestionToReviewSource(
   )
 }
 
-function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuestionForRender) {
+export function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuestionForRender) {
   const parts = Array.isArray(payloadQuestion.parts) ? payloadQuestion.parts : []
   const isMultipart = parts.length > 1
 
   return {
     id: payloadQuestion.id,
+    version: 10, // todo just placeholder for now
+    index: 1, // todo just placeholder for now
     prompt: payloadQuestion.prompt ?? undefined,
     subTopics: mapPayloadSubTopics(payloadQuestion.subTopics),
     parts: parts.map((payloadQuestionPart: PayloadQuestionPart) => ({
@@ -104,12 +98,25 @@ function payloadResponseToAttemptCandidate(payloadResponse: PayloadQuestionRespo
     case 'multipleChoice':
       return {
         type: payloadResponse.type,
-        choices: Array.isArray(payloadResponse.multipleChoice?.choices)
-          ? payloadResponse.multipleChoice.choices.map((choice) => ({
-              id: choice?.id ?? undefined,
-              text: choice?.text ?? undefined,
-            }))
-          : undefined,
+        choices: R.pipe(
+          payloadResponse.multipleChoice?.choices,
+          (arr) => arr ?? [],
+          R.filter(
+            (choice): choice is typeof choice & { id: NonNullable<typeof choice.id> } =>
+              choice.id !== undefined && choice.id !== null,
+          ),
+          R.map(
+            (choice) =>
+              [
+                choice.id,
+                {
+                  id: choice.id,
+                  text: choice.text,
+                },
+              ] as const,
+          ),
+          R.fromEntries(),
+        ),
         shuffle: payloadResponse.multipleChoice?.shuffle,
       }
     default:
@@ -146,13 +153,13 @@ function payloadResponseToReviewCandidate(payloadResponse: PayloadQuestionRespon
   }
 }
 
-function mapPayloadSubTopics(payloadSubTopics: unknown) {
+function mapPayloadSubTopics(payloadSubTopics: PayloadQuestionForRender['subTopics']) {
   if (!Array.isArray(payloadSubTopics)) {
     return []
   }
 
   return payloadSubTopics
-    .map((payloadSubTopic) => mapPayloadSubTopic(payloadSubTopic as PayloadSubTopic))
+    .map((payloadSubTopic) => mapPayloadSubTopic(payloadSubTopic))
     .filter(
       (payloadSubTopic): payloadSubTopic is NonNullable<typeof payloadSubTopic> =>
         payloadSubTopic != null,
@@ -164,19 +171,13 @@ function mapPayloadSubTopic(payloadSubTopic: PayloadSubTopic) {
     return undefined
   }
 
-  if (
-    typeof payloadSubTopic.id !== 'number' ||
-    typeof payloadSubTopic.name !== 'string' ||
-    !payloadSubTopic.topic ||
-    typeof payloadSubTopic.topic === 'number' ||
-    typeof payloadSubTopic.topic.name !== 'string'
-  ) {
+  if (!payloadSubTopic.topic || typeof payloadSubTopic.topic === 'number') {
     return undefined
   }
 
   return {
     id: payloadSubTopic.id,
-    name: payloadSubTopic.name,
+    subtopicName: payloadSubTopic.name,
     topicName: payloadSubTopic.topic.name,
   }
 }

@@ -19,6 +19,12 @@ export const QuestionAnswerField = ({
   const questionSubmissionEvaluationPart = questionSubmissionEvaluation.parts[questionPart.id]
   const isEvaluated = questionSubmissionEvaluation.isEvaluated
 
+  if (!questionSubmissionEvaluationPart) {
+    throw new Error(
+      `Missing question submission evaluation data for part ${questionPart.id} (isEvaluated=${String(questionSubmissionEvaluation.isEvaluated)})`,
+    )
+  }
+
   switch (questionPart.response.type) {
     case 'multipleChoice': {
       if (questionSubmissionEvaluationPart.type !== 'multipleChoice')
@@ -34,7 +40,7 @@ export const QuestionAnswerField = ({
         <div className="space-y-3">
           {displayedChoices.map((choice, index) => {
             const choiceId = `${questionPart.id}-${choice.id}`
-            const isSelected = questionSubmissionEvaluationPart.givenChoiceId !== undefined
+            const isSelected = questionSubmissionEvaluationPart.givenChoiceId === choice.id
 
             return (
               <label
@@ -106,7 +112,8 @@ export const QuestionAnswerField = ({
             },
           ].map((option) => {
             const optionId = `${questionPart.id}-${option.value}`
-            const isSelected = questionSubmissionEvaluationPart.givenResponse !== undefined
+            const isSelected =
+              questionSubmissionEvaluationPart.givenResponse === (option.value === 'correct')
 
             return (
               <label

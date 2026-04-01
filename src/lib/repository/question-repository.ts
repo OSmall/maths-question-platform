@@ -2,10 +2,7 @@ import { getPayload } from 'payload'
 import { ResultAsync } from 'neverthrow'
 
 import config from '@payload-config'
-import {
-  payloadQuestionToAttempt as payloadQuestionToRenderableQuestion,
-  payloadQuestionToReviewSource,
-} from '@/lib/data/question-mapper'
+import { payloadQuestionToAttempt, payloadQuestionToReviewSource } from '@/lib/data/question-mapper'
 import type { QuestionSelect } from '@/payload/payload-types'
 import { handleRepositoryError } from '@/lib/repository/repository-utils'
 import { Question } from '@/payload/collections/question'
@@ -59,7 +56,7 @@ async function queryPayloadForQuestionAttemptByIdAndDraft(id: number, draft: boo
   })
 }
 
-function queryPayloadForQuestionAttemptByIdAndDraftAsync(id: number, draft = false) {
+export function queryPayloadForQuestionAttemptByIdAndDraftAsync(id: number, draft = false) {
   return ResultAsync.fromPromise(
     queryPayloadForQuestionAttemptByIdAndDraft(id, draft),
     handleRepositoryError(Question.slug, id),
@@ -68,7 +65,7 @@ function queryPayloadForQuestionAttemptByIdAndDraftAsync(id: number, draft = fal
 
 export function fetchRenderableQuestionByIdAndDraft(id: number, draft: boolean) {
   return queryPayloadForQuestionAttemptByIdAndDraftAsync(id, draft).andThen(
-    payloadQuestionToRenderableQuestion,
+    payloadQuestionToAttempt,
   )
 }
 
@@ -219,7 +216,9 @@ export function fetchQuestionEvaluationEnrichment(questionId: number, draft = fa
             {
               type: part.response.type,
               workedSolutions: part.workedSolutions,
-              correctResponses: part.response.shortText?.acceptedAnswers,
+              correctResponses: part.response.shortText?.acceptedAnswers?.map(
+                (acceptedAnswer) => acceptedAnswer.value,
+              ),
             },
           ] as const
         } else if (part.response.type === 'selfReport') {

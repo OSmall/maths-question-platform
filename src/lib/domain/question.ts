@@ -4,6 +4,7 @@ import { z } from 'zod'
 const richTextSchema = z.custom<SerializedEditorState>((value) => value != null).optional()
 
 const subTopicSchema = z.object({
+  id: z.number(),
   subtopicName: z.string().min(1),
   topicName: z.string().min(1),
 })

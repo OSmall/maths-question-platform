@@ -1,18 +1,24 @@
-import { fetchRenderableQuestionByIdAndDraft } from '@/lib/repository/question-repository'
-import { err, ok } from 'neverthrow'
-import { NotANumberError } from '@/lib/errors'
+import { queryPayloadForQuestionAttemptByIdAndDraftAsync } from '@/lib/repository/question-repository'
+import { ok } from 'neverthrow'
+import { payloadQuestionToAttemptCandidate } from '../data/question-mapper'
+import { parseToResult } from '../utils/validation'
+import { renderableQuestionSchema } from '../domain/question'
 
 type GetQuestionByIdOptions = {
   draft?: boolean
+  seed: string
 }
 
-export function getQuestionById(id: string, options: GetQuestionByIdOptions = {}) {
+export function getQuestionById(id: number, options: GetQuestionByIdOptions) {
   const isDraft = options.draft ?? false
 
   return ok(id)
-    .andThen((id) => {
-      const idNumber = Number(id)
-      return isNaN(idNumber) ? err(new NotANumberError(id)) : ok(idNumber)
-    })
-    .asyncAndThen((idNumber) => fetchRenderableQuestionByIdAndDraft(idNumber, isDraft))
+    .asyncAndThen((id) => queryPayloadForQuestionAttemptByIdAndDraftAsync(id, isDraft))
+    .map(payloadQuestionToAttemptCandidate)
+    .map((question) => ({
+      ...question,
+      seed: options.seed,
+    }))
+    .andTee((question) => console.debug(`question candidate object is ${JSON.stringify(question)}`))
+    .andThen((candidateQuestion) => parseToResult(renderableQuestionSchema, candidateQuestion))
 }

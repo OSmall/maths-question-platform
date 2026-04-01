@@ -47,13 +47,13 @@ export default async function QuestionPage({
     redirect(`/question/${id}?${seededSearchParams.toString()}`)
   }
 
-  const questionResult = await getQuestionById(id, { draft: isDraftMode })
+  const questionResult = await getQuestionById(questionId, { draft: isDraftMode, seed })
   const questionSubmissionEvaluationResult = await getQuestionSubmissionEvaluation(
     questionId,
     resolvedSearchParams,
   )
 
-  Result.combine([questionResult, questionSubmissionEvaluationResult]).match(
+  return Result.combine([questionResult, questionSubmissionEvaluationResult]).match(
     ([question, questionSubmissionEvaluation]) => (
       <div className="min-h-screen w-full bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.16),transparent_32%),linear-gradient(180deg,rgba(255,255,255,0.96),rgba(248,250,252,0.94))] px-4 py-5 dark:bg-[radial-gradient(circle_at_top,rgba(16,185,129,0.14),transparent_28%),linear-gradient(180deg,rgba(12,18,24,0.98),rgba(15,23,42,0.96))] md:px-6 md:py-8">
         {isDraftMode && <RefreshRouteOnSave />}
