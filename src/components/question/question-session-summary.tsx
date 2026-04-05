@@ -1,5 +1,6 @@
 import { Clock3, NotebookPen, Target } from 'lucide-react'
 
+import { answerTypeLabel } from '@/components/question/question-utils'
 import { Badge } from '@/components/ui/badge'
 import type {
   RenderableQuestion,
@@ -248,17 +249,4 @@ const RailMetric = ({
       </div>
     </div>
   )
-}
-
-function answerTypeLabel(answerType: RenderableQuestion['parts'][number]['response']['type']) {
-  switch (answerType) {
-    case 'multipleChoice':
-      return 'Multiple choice'
-    case 'shortText':
-      return 'Short text'
-    case 'selfReport':
-      return 'Self report'
-    default:
-      return 'Answer'
-  }
 }

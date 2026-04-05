@@ -4,6 +4,7 @@ import {
   renderableQuestionSubmissionEvaluationSchema,
 } from '../domain/question'
 import { fetchQuestionEvaluationEnrichment, fetchQuestionPartResponseTypes, } from '../repository/question-repository'
+import { getSingleSearchParam } from '../utils/search-params'
 import { assertNever, DistributiveOmit } from '../utils/types'
 import { parseToResult } from '../utils/validation'
 import * as R from 'remeda'
@@ -16,12 +17,14 @@ import * as R from 'remeda'
 export function getQuestionSubmissionEvaluation(
   questionId: number,
   searchParams: Record<string, string | string[] | undefined>,
+  options: { draft?: boolean } = {},
 ) {
-  const isSubmitted = parseParam(searchParams.submitted) === '1'
+  const isDraft = options.draft ?? false
+  const isSubmitted = getSingleSearchParam(searchParams.submitted) === '1'
   const parsedAnswers = parseAnswers(searchParams)
 
   if (!isSubmitted) {
-    return fetchQuestionPartResponseTypes(questionId)
+    return fetchQuestionPartResponseTypes(questionId, isDraft)
       .map((questionPartResponseTypes) => ({
         answeredParts: countAnsweredQuestionParts(questionPartResponseTypes, parsedAnswers),
         parts: buildUnevaluatedQuestionParts(questionPartResponseTypes, parsedAnswers),
@@ -34,7 +37,7 @@ export function getQuestionSubmissionEvaluation(
         }),
       )
   } else {
-    return fetchQuestionEvaluationEnrichment(questionId)
+    return fetchQuestionEvaluationEnrichment(questionId, isDraft)
       .map((enrichment) => {
         const questionPartResponseTypes = R.pipe(
           enrichment,
@@ -65,9 +68,6 @@ export function getQuestionSubmissionEvaluation(
           parts: evaluatedParts,
         }
       })
-      .andTee((candidate) =>
-        console.debug(`question evaluation candidate object is ${JSON.stringify(candidate)}`),
-      )
       .andThen((candidate) =>
         parseToResult(renderableQuestionSubmissionEvaluationSchema, candidate),
       )
@@ -298,23 +298,13 @@ function assertAllQuestionPartsAnswered(
   }
 }
 
-function parseParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value.at(-1)
-  }
-
-  return value
-}
-
 function parseAnswers(searchParams: Record<string, string | string[] | undefined>) {
   const partToGiven: Record<string, string> = {}
   for (const [key, value] of Object.entries(searchParams)) {
-    console.trace(`searchParams key [${key}] value [${value}]`)
     if (!key.startsWith('a.')) continue
     const partId = key.substring(2)
-    const parsed = parseParam(value)
+    const parsed = getSingleSearchParam(value)
     if (parsed !== undefined) partToGiven[partId] = parsed
   }
-  console.trace(`partToGiven map [${JSON.stringify(partToGiven)}]`)
   return partToGiven
 }

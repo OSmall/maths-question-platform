@@ -4,6 +4,7 @@ import { QuestionRenderer } from '@/components/question/question-renderer'
 import { QuestionNotRenderableError } from '@/lib/errors'
 import { getQuestionSubmissionEvaluation } from '@/lib/service/question-evaluation-service'
 import { getQuestionById } from '@/lib/service/question-service'
+import { getSingleSearchParam } from '@/lib/utils/search-params'
 import { Result } from 'neverthrow'
 import { draftMode } from 'next/headers'
 import { notFound, redirect } from 'next/navigation'
@@ -51,6 +52,7 @@ export default async function QuestionPage({
   const questionSubmissionEvaluationResult = await getQuestionSubmissionEvaluation(
     questionId,
     resolvedSearchParams,
+    { draft: isDraftMode },
   )
 
   return Result.combine([questionResult, questionSubmissionEvaluationResult]).match(
@@ -85,12 +87,4 @@ export default async function QuestionPage({
       notFound()
     },
   )
-}
-
-function getSingleSearchParam(value: string | string[] | undefined) {
-  if (Array.isArray(value)) {
-    return value.at(-1)
-  }
-
-  return value
 }

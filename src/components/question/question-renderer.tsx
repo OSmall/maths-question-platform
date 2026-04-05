@@ -1,7 +1,8 @@
 import { submitQuestionAnswersFormAction } from '@/app/actions/question-actions'
 import { QuestionActionBar } from '@/components/question/question-action-bar'
 import { QuestionAnswerField } from '@/components/question/question-answer-field'
-import { answerTypeLabel, QuestionHeader } from '@/components/question/question-header'
+import { QuestionHeader } from '@/components/question/question-header'
+import { answerTypeLabel } from '@/components/question/question-utils'
 import { QuestionReviewPanel } from '@/components/question/question-review-panel'
 import { QuestionSessionSummary } from '@/components/question/question-session-summary'
 import { QuestionToggleButton } from '@/components/question/question-toggle-button'
@@ -18,16 +19,11 @@ type QuestionRendererProps = {
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
 }
 
-export const QuestionRenderer = async ({
+export const QuestionRenderer = ({
   isDraftMode,
   question,
   questionSubmissionEvaluation,
 }: QuestionRendererProps) => {
-  console.debug(`question given to QuestionRenderer: ${JSON.stringify(question)}`)
-  console.debug(
-    `questionSubmissionEvaluation given to QuestionRenderer: ${JSON.stringify(questionSubmissionEvaluation)}`,
-  )
-
   return (
     <form action={submitQuestionAnswersFormAction} className="mx-auto w-full max-w-310">
       <input name="questionId" type="hidden" value={question.id} />

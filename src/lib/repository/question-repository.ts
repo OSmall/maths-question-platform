@@ -1,17 +1,16 @@
-import { getPayload } from 'payload'
 import { ResultAsync } from 'neverthrow'
+import { getPayload } from 'payload'
 
-import config from '@payload-config'
-import { payloadQuestionToAttempt, payloadQuestionToReviewSource } from '@/lib/data/question-mapper'
-import type { QuestionSelect } from '@/payload/payload-types'
 import { handleRepositoryError } from '@/lib/repository/repository-utils'
 import { Question } from '@/payload/collections/question'
+import type { QuestionSelect } from '@/payload/payload-types'
+import config from '@payload-config'
+import * as R from 'remeda'
 import z from 'zod'
 import { questionResponseTypeSchema as questionPartResponseTypeSchema } from '../domain/question'
-import { parseToResult } from '../utils/validation'
 import { QuestionNotRenderableError } from '../errors'
 import { assertNever } from '../utils/types'
-import * as R from 'remeda'
+import { parseToResult } from '../utils/validation'
 
 const questionAttemptSelect = {
   prompt: true,
@@ -56,16 +55,10 @@ async function queryPayloadForQuestionAttemptByIdAndDraft(id: number, draft: boo
   })
 }
 
-export function queryPayloadForQuestionAttemptByIdAndDraftAsync(id: number, draft = false) {
+export function queryPayloadForQuestionAttemptByIdAndDraftResult(id: number, draft = false) {
   return ResultAsync.fromPromise(
     queryPayloadForQuestionAttemptByIdAndDraft(id, draft),
     handleRepositoryError(Question.slug, id),
-  )
-}
-
-export function fetchRenderableQuestionByIdAndDraft(id: number, draft: boolean) {
-  return queryPayloadForQuestionAttemptByIdAndDraftAsync(id, draft).andThen(
-    payloadQuestionToAttempt,
   )
 }
 
@@ -117,25 +110,13 @@ async function queryPayloadForQuestionReviewByIdAndDraft(id: number, draft: bool
   })
 }
 
-function queryPayloadForQuestionReviewByIdAndDraftResultAsync(id: number, draft = false) {
-  return ResultAsync.fromPromise(
-    queryPayloadForQuestionReviewByIdAndDraft(id, draft),
-    handleRepositoryError(Question.slug, id),
-  )
-}
-
-export function fetchQuestionReviewSourceByIdAndDraft(id: number, draft: boolean) {
-  return queryPayloadForQuestionReviewByIdAndDraftResultAsync(id, draft).andThen(
-    payloadQuestionToReviewSource,
-  )
-}
-
 async function queryPayloadForQuestionPartTypes(id: number, draft: boolean) {
   const payload = await getPayload({ config })
 
   return payload.findByID({
     collection: 'question',
     id,
+    draft,
     select: {
       parts: {
         id: true,
@@ -169,6 +150,7 @@ async function queryPayloadForQuestionEvaluationEnrichment(questionId: number, d
   return payload.findByID({
     collection: 'question',
     id: questionId,
+    draft,
     select: {
       parts: {
         id: true,

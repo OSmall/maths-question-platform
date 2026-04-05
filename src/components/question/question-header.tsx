@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge'
 import { BookOpen, NotebookPen } from 'lucide-react'
 import { RichTextRenderer } from '@/components/rich-text/rich-text-renderer'
+import { answerTypeLabel } from '@/components/question/question-utils'
 import type { RenderableQuestion } from '@/lib/domain/question'
 
 type QuestionHeaderProps = {
@@ -55,19 +56,4 @@ export const QuestionHeader = ({ isDraftMode, question, answeredParts }: Questio
       </div>
     </header>
   )
-}
-
-export function answerTypeLabel(
-  answerType: RenderableQuestion['parts'][number]['response']['type'],
-) {
-  switch (answerType) {
-    case 'multipleChoice':
-      return 'Multiple choice'
-    case 'shortText':
-      return 'Short text'
-    case 'selfReport':
-      return 'Self report'
-    default:
-      return 'Answer'
-  }
 }

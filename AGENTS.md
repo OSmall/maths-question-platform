@@ -31,7 +31,7 @@
 - The repository layer sits in-between the service layer and the Payload CMS backend. This exists for mocking purposes
   in tests.
 - The domain contains data types that are used for the business logic. Translation between the backend types and the
-  domain types is done in mappers in the `data` folder.
+  domain types is done in mappers in the `data` folder. It is also ok to put them in the repsitory if small.
 
 ## UI Philosophy
 
