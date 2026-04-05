@@ -379,21 +379,6 @@
         }
       },
       "indexes": {
-        "topic_name_ci_unique_idx": {
-          "name": "topic_name_ci_unique_idx",
-          "columns": [
-            {
-              "expression": "lower(regexp_replace(btrim(\"name\"), '\\\\s+', ' ', 'g'))",
-              "isExpression": true,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "topic_updated_at_idx": {
           "name": "topic_updated_at_idx",
           "columns": [
@@ -485,27 +470,6 @@
           "method": "btree",
           "with": {}
         },
-        "sub_topic_topic_name_ci_idx": {
-          "name": "sub_topic_topic_name_ci_idx",
-          "columns": [
-            {
-              "expression": "topic_id",
-              "isExpression": false,
-              "asc": true,
-              "nulls": "last"
-            },
-            {
-              "expression": "lower(regexp_replace(btrim(\"name\"), '\\\\s+', ' ', 'g'))",
-              "isExpression": true,
-              "asc": true,
-              "nulls": "last"
-            }
-          ],
-          "isUnique": true,
-          "concurrently": false,
-          "method": "btree",
-          "with": {}
-        },
         "sub_topic_updated_at_idx": {
           "name": "sub_topic_updated_at_idx",
           "columns": [
@@ -543,6 +507,245 @@
           "tableFrom": "sub_topic",
           "tableTo": "topic",
           "columnsFrom": ["topic_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.syllabus": {
+      "name": "syllabus",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "name": {
+          "name": "name",
+          "type": "varchar",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "syllabus_name_idx": {
+          "name": "syllabus_name_idx",
+          "columns": [
+            {
+              "expression": "name",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "syllabus_updated_at_idx": {
+          "name": "syllabus_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "syllabus_created_at_idx": {
+          "name": "syllabus_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {},
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.syllabus_sub_topic": {
+      "name": "syllabus_sub_topic",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "serial",
+          "primaryKey": true,
+          "notNull": true
+        },
+        "syllabus_id": {
+          "name": "syllabus_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "sub_topic_id": {
+          "name": "sub_topic_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "status": {
+          "name": "status",
+          "type": "enum_syllabus_sub_topic_status",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'included'"
+        },
+        "updated_at": {
+          "name": "updated_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp(3) with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {
+        "syllabus_sub_topic_syllabus_idx": {
+          "name": "syllabus_sub_topic_syllabus_idx",
+          "columns": [
+            {
+              "expression": "syllabus_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "syllabus_sub_topic_sub_topic_idx": {
+          "name": "syllabus_sub_topic_sub_topic_idx",
+          "columns": [
+            {
+              "expression": "sub_topic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "syllabus_sub_topic_updated_at_idx": {
+          "name": "syllabus_sub_topic_updated_at_idx",
+          "columns": [
+            {
+              "expression": "updated_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "syllabus_sub_topic_created_at_idx": {
+          "name": "syllabus_sub_topic_created_at_idx",
+          "columns": [
+            {
+              "expression": "created_at",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "syllabus_subTopic_idx": {
+          "name": "syllabus_subTopic_idx",
+          "columns": [
+            {
+              "expression": "syllabus_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            },
+            {
+              "expression": "sub_topic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": true,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        }
+      },
+      "foreignKeys": {
+        "syllabus_sub_topic_syllabus_id_syllabus_id_fk": {
+          "name": "syllabus_sub_topic_syllabus_id_syllabus_id_fk",
+          "tableFrom": "syllabus_sub_topic",
+          "tableTo": "syllabus",
+          "columnsFrom": ["syllabus_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "syllabus_sub_topic_sub_topic_id_sub_topic_id_fk": {
+          "name": "syllabus_sub_topic_sub_topic_id_sub_topic_id_fk",
+          "tableFrom": "syllabus_sub_topic",
+          "tableTo": "sub_topic",
+          "columnsFrom": ["sub_topic_id"],
           "columnsTo": ["id"],
           "onDelete": "set null",
           "onUpdate": "no action"
@@ -1975,6 +2178,18 @@
           "primaryKey": false,
           "notNull": false
         },
+        "syllabus_id": {
+          "name": "syllabus_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "syllabus_sub_topic_id": {
+          "name": "syllabus_sub_topic_id",
+          "type": "integer",
+          "primaryKey": false,
+          "notNull": false
+        },
         "question_id": {
           "name": "question_id",
           "type": "integer",
@@ -2088,6 +2303,36 @@
           "method": "btree",
           "with": {}
         },
+        "payload_locked_documents_rels_syllabus_id_idx": {
+          "name": "payload_locked_documents_rels_syllabus_id_idx",
+          "columns": [
+            {
+              "expression": "syllabus_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
+        "payload_locked_documents_rels_syllabus_sub_topic_id_idx": {
+          "name": "payload_locked_documents_rels_syllabus_sub_topic_id_idx",
+          "columns": [
+            {
+              "expression": "syllabus_sub_topic_id",
+              "isExpression": false,
+              "asc": true,
+              "nulls": "last"
+            }
+          ],
+          "isUnique": false,
+          "concurrently": false,
+          "method": "btree",
+          "with": {}
+        },
         "payload_locked_documents_rels_question_id_idx": {
           "name": "payload_locked_documents_rels_question_id_idx",
           "columns": [
@@ -2146,6 +2391,24 @@
           "tableFrom": "payload_locked_documents_rels",
           "tableTo": "sub_topic",
           "columnsFrom": ["sub_topic_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_syllabus_fk": {
+          "name": "payload_locked_documents_rels_syllabus_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "syllabus",
+          "columnsFrom": ["syllabus_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "payload_locked_documents_rels_syllabus_sub_topic_fk": {
+          "name": "payload_locked_documents_rels_syllabus_sub_topic_fk",
+          "tableFrom": "payload_locked_documents_rels",
+          "tableTo": "syllabus_sub_topic",
+          "columnsFrom": ["syllabus_sub_topic_id"],
           "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
@@ -2458,6 +2721,11 @@
     }
   },
   "enums": {
+    "public.enum_syllabus_sub_topic_status": {
+      "name": "enum_syllabus_sub_topic_status",
+      "schema": "public",
+      "values": ["included", "assumedKnowledge"]
+    },
     "public.enum_question_parts_response_type": {
       "name": "enum_question_parts_response_type",
       "schema": "public",
@@ -2489,6 +2757,6 @@
     "tables": {},
     "columns": {}
   },
-  "id": "120ec5ae-25a2-4e14-97e2-020f6baa76f5",
+  "id": "4f1a1c10-0141-4b16-913b-e6a06f428346",
   "prevId": "00000000-0000-0000-0000-000000000000"
 }

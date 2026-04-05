@@ -9,6 +9,8 @@ import sharp from 'sharp'
 import { Users } from '@/payload/collections/users'
 import { Media } from '@/payload/collections/media'
 import { Question } from '@/payload/collections/question'
+import { Syllabus } from '@/payload/collections/syllabus'
+import { SyllabusSubTopic } from '@/payload/collections/syllabus-sub-topic'
 import { Topic } from '@/payload/collections/topic'
 import { SubTopic } from '@/payload/collections/sub-topic'
 
@@ -22,7 +24,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Topic, SubTopic, Question],
+  collections: [Users, Media, Topic, SubTopic, Syllabus, SyllabusSubTopic, Question],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

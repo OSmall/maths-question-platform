@@ -71,6 +71,8 @@ export interface Config {
     media: Media;
     topic: Topic;
     subTopic: SubTopic;
+    syllabus: Syllabus;
+    syllabusSubTopic: SyllabusSubTopic;
     question: Question;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
@@ -83,6 +85,8 @@ export interface Config {
     media: MediaSelect<false> | MediaSelect<true>;
     topic: TopicSelect<false> | TopicSelect<true>;
     subTopic: SubTopicSelect<false> | SubTopicSelect<true>;
+    syllabus: SyllabusSelect<false> | SyllabusSelect<true>;
+    syllabusSubTopic: SyllabusSubTopicSelect<false> | SyllabusSubTopicSelect<true>;
     question: QuestionSelect<false> | QuestionSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
@@ -187,6 +191,32 @@ export interface SubTopic {
   id: number;
   name: string;
   topic: number | Topic;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Syllabuses define coverage over the existing topic and subtopic taxonomy.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabus".
+ */
+export interface Syllabus {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Matrix-first coverage mapping between syllabuses and subtopics.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabusSubTopic".
+ */
+export interface SyllabusSubTopic {
+  id: number;
+  syllabus: number | Syllabus;
+  subTopic: number | SubTopic;
+  status: 'included' | 'assumedKnowledge';
   updatedAt: string;
   createdAt: string;
 }
@@ -339,6 +369,14 @@ export interface PayloadLockedDocument {
         value: number | SubTopic;
       } | null)
     | ({
+        relationTo: 'syllabus';
+        value: number | Syllabus;
+      } | null)
+    | ({
+        relationTo: 'syllabusSubTopic';
+        value: number | SyllabusSubTopic;
+      } | null)
+    | ({
         relationTo: 'question';
         value: number | Question;
       } | null);
@@ -440,6 +478,26 @@ export interface TopicSelect<T extends boolean = true> {
 export interface SubTopicSelect<T extends boolean = true> {
   name?: T;
   topic?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabus_select".
+ */
+export interface SyllabusSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabusSubTopic_select".
+ */
+export interface SyllabusSubTopicSelect<T extends boolean = true> {
+  syllabus?: T;
+  subTopic?: T;
+  status?: T;
   updatedAt?: T;
   createdAt?: T;
 }

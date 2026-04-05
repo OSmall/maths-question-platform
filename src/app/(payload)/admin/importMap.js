@@ -1,5 +1,7 @@
 import { SubTopicNameCell as SubTopicNameCell_e3eea0f68fa844a4681869ee24a62df6 } from '../../../payload/components/admin/sub-topic-name-cell'
 import { SubTopicEditTitle as SubTopicEditTitle_ebe9b8d419736b5be74c0379aa8fc2cd } from '../../../payload/components/admin/sub-topic-edit-title'
+import { SyllabusCoverageListView as SyllabusCoverageListView_9b427855f276f410557e2807fa1ebf7c } from '../../../payload/components/admin/syllabus-coverage-list-view'
+import { SyllabusCoverageViewToggleAction as SyllabusCoverageViewToggleAction_30331ff6c3bd89c59d7bb8b34a8ff896 } from '../../../payload/components/admin/syllabus-coverage-view-toggle-action'
 import { RscEntryLexicalCell as RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { RscEntryLexicalField as RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
 import { LexicalDiffComponent as LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e } from '@payloadcms/richtext-lexical/rsc'
@@ -28,6 +30,8 @@ import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e
 export const importMap = {
   "/components/admin/sub-topic-name-cell#SubTopicNameCell": SubTopicNameCell_e3eea0f68fa844a4681869ee24a62df6,
   "/components/admin/sub-topic-edit-title#SubTopicEditTitle": SubTopicEditTitle_ebe9b8d419736b5be74c0379aa8fc2cd,
+  "/components/admin/syllabus-coverage-list-view#SyllabusCoverageListView": SyllabusCoverageListView_9b427855f276f410557e2807fa1ebf7c,
+  "/components/admin/syllabus-coverage-view-toggle-action#SyllabusCoverageViewToggleAction": SyllabusCoverageViewToggleAction_30331ff6c3bd89c59d7bb8b34a8ff896,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalCell": RscEntryLexicalCell_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#RscEntryLexicalField": RscEntryLexicalField_44fe37237e0ebf4470c9990d8cb7b07e,
   "@payloadcms/richtext-lexical/rsc#LexicalDiffComponent": LexicalDiffComponent_44fe37237e0ebf4470c9990d8cb7b07e,
