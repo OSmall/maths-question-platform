@@ -69,8 +69,11 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    topic: Topic;
+    subTopic: SubTopic;
+    syllabus: Syllabus;
+    syllabusSubTopic: SyllabusSubTopic;
     question: Question;
-    aspect: Aspect;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -80,8 +83,11 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    topic: TopicSelect<false> | TopicSelect<true>;
+    subTopic: SubTopicSelect<false> | SubTopicSelect<true>;
+    syllabus: SyllabusSelect<false> | SyllabusSelect<true>;
+    syllabusSubTopic: SyllabusSubTopicSelect<false> | SyllabusSubTopicSelect<true>;
     question: QuestionSelect<false> | QuestionSelect<true>;
-    aspect: AspectSelect<false> | AspectSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -164,15 +170,66 @@ export interface Media {
   focalY?: number | null;
 }
 /**
+ * Topics are the broadest curriculum groupings used to organise subtopics.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topic".
+ */
+export interface Topic {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Subtopics are the curriculum tags applied to questions and worked solutions. Each belongs to one parent topic.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subTopic".
+ */
+export interface SubTopic {
+  id: number;
+  name: string;
+  topic: number | Topic;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Syllabuses define coverage over the existing topic and subtopic taxonomy.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabus".
+ */
+export interface Syllabus {
+  id: number;
+  name: string;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * Matrix-first coverage mapping between syllabuses and subtopics.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabusSubTopic".
+ */
+export interface SyllabusSubTopic {
+  id: number;
+  syllabus: number | Syllabus;
+  subTopic: number | SubTopic;
+  status: 'included' | 'assumedKnowledge';
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "question".
  */
 export interface Question {
   id: number;
   /**
-   * The overall question or context for the question. This will be displayed above the parts of the question.
+   * Use this for the full prompt on single-part questions, or shared context that sits above all parts on multipart questions.
    */
-  overallQuestionRichText: {
+  prompt?: {
     root: {
       type: string;
       children: {
@@ -186,15 +243,15 @@ export interface Question {
       version: number;
     };
     [k: string]: unknown;
-  };
+  } | null;
   /**
-   * The parts of the question can be subquestions or just a single part for questions with no subquestions.
+   * Single-part questions still use one part row. Add more rows only when the question genuinely has multiple parts.
    */
   parts: {
     /**
-     * The rich text for just this part of the question. Leave this blank if this is a question with no subquestions. Don't include the subquestion identifier e.g. "ii." or "b)".
+     * Only shown for multipart questions. Keep any single-part prompt content at the top level instead.
      */
-    partRichText?: {
+    prompt?: {
       root: {
         type: string;
         children: {
@@ -210,38 +267,36 @@ export interface Question {
       [k: string]: unknown;
     } | null;
     /**
-     * The sort of input that is received for this part of the question.
+     * Choose how the learner responds to this part.
      */
-    answerMechanism: (
-      | {
-          answers: {
-            answer: string;
-            isCorrect: boolean;
-            id?: string | null;
-          }[];
-          shuffle: boolean;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'multipleChoice';
-        }
-      | {
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'selfReport';
-        }
-      | {
-          correctAnswer?: string | null;
-          id?: string | null;
-          blockName?: string | null;
-          blockType: 'freeTextValidation';
-        }
-    )[];
+    response: {
+      type: 'multipleChoice' | 'shortText' | 'selfReport';
+      multipleChoice?: {
+        choices?:
+          | {
+              text: string;
+              isCorrect: boolean;
+              id?: string | null;
+            }[]
+          | null;
+        shuffle: boolean;
+      };
+      shortText?: {
+        acceptedAnswers?:
+          | {
+              value: string;
+              id?: string | null;
+            }[]
+          | null;
+      };
+      selfReport?: {};
+    };
     /**
-     * The various worked solution methods for this part of the question.
+     * Optional authored worked solutions shown after submission. They remain hidden until review is requested.
      */
-    solutionMethods?:
+    workedSolutions?:
       | {
-          solutionRichText: {
+          prompt: {
             root: {
               type: string;
               children: {
@@ -257,33 +312,21 @@ export interface Question {
             [k: string]: unknown;
           };
           /**
-           * If the solution requires knowledge of aspects from a different area of learning compared to the question, we want to record that here so we can filter them out if need be.
+           * Optional supporting subtopics used for filtering or analytics. These are not shown directly to students.
            */
-          solutionAspects?: (number | Aspect)[] | null;
+          subTopics?: (number | SubTopic)[] | null;
           id?: string | null;
         }[]
       | null;
     id?: string | null;
   }[];
   /**
-   * The aspects that this question is testing. If the question has multiple parts, these aspects should cover all parts of the question.
+   * Optional question-level subtopics. Learner-facing taxonomy is derived from these tags only.
    */
-  questionAspects?: (number | Aspect)[] | null;
+  subTopics?: (number | SubTopic)[] | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
-}
-/**
- * Aspects are specific areas of learning and are the lowest level of categorisation of a question. They are often a suptopic on a syllabus.
- *
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "aspect".
- */
-export interface Aspect {
-  id: number;
-  name: string;
-  updatedAt: string;
-  createdAt: string;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -318,12 +361,24 @@ export interface PayloadLockedDocument {
         value: number | Media;
       } | null)
     | ({
-        relationTo: 'question';
-        value: number | Question;
+        relationTo: 'topic';
+        value: number | Topic;
       } | null)
     | ({
-        relationTo: 'aspect';
-        value: number | Aspect;
+        relationTo: 'subTopic';
+        value: number | SubTopic;
+      } | null)
+    | ({
+        relationTo: 'syllabus';
+        value: number | Syllabus;
+      } | null)
+    | ({
+        relationTo: 'syllabusSubTopic';
+        value: number | SyllabusSubTopic;
+      } | null)
+    | ({
+        relationTo: 'question';
+        value: number | Question;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -409,67 +464,94 @@ export interface MediaSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "topic_select".
+ */
+export interface TopicSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "subTopic_select".
+ */
+export interface SubTopicSelect<T extends boolean = true> {
+  name?: T;
+  topic?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabus_select".
+ */
+export interface SyllabusSelect<T extends boolean = true> {
+  name?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "syllabusSubTopic_select".
+ */
+export interface SyllabusSubTopicSelect<T extends boolean = true> {
+  syllabus?: T;
+  subTopic?: T;
+  status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "question_select".
  */
 export interface QuestionSelect<T extends boolean = true> {
-  overallQuestionRichText?: T;
+  prompt?: T;
   parts?:
     | T
     | {
-        partRichText?: T;
-        answerMechanism?:
+        prompt?: T;
+        response?:
           | T
           | {
+              type?: T;
               multipleChoice?:
                 | T
                 | {
-                    answers?:
+                    choices?:
                       | T
                       | {
-                          answer?: T;
+                          text?: T;
                           isCorrect?: T;
                           id?: T;
                         };
                     shuffle?: T;
-                    id?: T;
-                    blockName?: T;
                   };
-              selfReport?:
+              shortText?:
                 | T
                 | {
-                    id?: T;
-                    blockName?: T;
+                    acceptedAnswers?:
+                      | T
+                      | {
+                          value?: T;
+                          id?: T;
+                        };
                   };
-              freeTextValidation?:
-                | T
-                | {
-                    correctAnswer?: T;
-                    id?: T;
-                    blockName?: T;
-                  };
+              selfReport?: T | {};
             };
-        solutionMethods?:
+        workedSolutions?:
           | T
           | {
-              solutionRichText?: T;
-              solutionAspects?: T;
+              prompt?: T;
+              subTopics?: T;
               id?: T;
             };
         id?: T;
       };
-  questionAspects?: T;
+  subTopics?: T;
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
-}
-/**
- * This interface was referenced by `Config`'s JSON-Schema
- * via the `definition` "aspect_select".
- */
-export interface AspectSelect<T extends boolean = true> {
-  name?: T;
-  updatedAt?: T;
-  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

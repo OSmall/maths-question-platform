@@ -12,3 +12,5 @@ export function toNonNullableOrThrow<T>(value: T | null | undefined, message?: s
 export function assertNever(value: never): never {
   throw new Error(`Unhandled case: ${JSON.stringify(value)}`)
 }
+
+export type DistributiveOmit<T, K extends keyof T> = T extends T ? Omit<T, K> : never;

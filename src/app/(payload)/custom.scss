@@ -1,0 +1,166 @@
+.syllabus-coverage-view {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 1rem;
+  min-height: calc(100vh - var(--app-header-height) - var(--base) * 2);
+}
+
+.syllabus-coverage-header {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.syllabus-coverage-header h1 {
+  margin: 0;
+  font-size: 1.6rem;
+}
+
+.syllabus-coverage-header p,
+.syllabus-coverage-clean,
+.syllabus-coverage-dirty {
+  margin: 0;
+  color: var(--theme-elevation-500);
+}
+
+.syllabus-coverage-dirty {
+  color: var(--theme-warning-700);
+}
+
+.syllabus-coverage-toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.syllabus-coverage-link {
+  color: var(--theme-success-600);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.syllabus-coverage-link:hover {
+  text-decoration: underline;
+}
+
+.syllabus-coverage-table-wrap {
+  min-height: 0;
+  overflow: auto;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 0.75rem;
+  background: var(--theme-elevation-0);
+}
+
+.syllabus-coverage-table {
+  width: max-content;
+  min-width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.syllabus-coverage-table th,
+.syllabus-coverage-table td {
+  border-bottom: 1px solid var(--theme-elevation-100);
+  border-right: 1px solid var(--theme-elevation-100);
+  padding: 0.75rem;
+  vertical-align: top;
+}
+
+.syllabus-coverage-table__sticky {
+  background: var(--theme-elevation-0);
+}
+
+.syllabus-coverage-table__sticky--header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  text-align: left;
+}
+
+.syllabus-coverage-table__sticky--first-column {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  width: 24rem;
+  min-width: 18rem;
+  max-width: 24rem;
+  text-align: left;
+}
+
+.syllabus-coverage-table__sticky--header.syllabus-coverage-table__sticky--first-column {
+  z-index: 3;
+}
+
+.syllabus-coverage-topic-row th,
+.syllabus-coverage-topic-row td {
+  background: var(--theme-elevation-50);
+}
+
+.syllabus-coverage-topic-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: 0;
+  background: transparent;
+  color: var(--theme-text);
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  padding: 0;
+}
+
+.syllabus-coverage-subtopic-cell {
+  font-weight: 500;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.syllabus-coverage-cell {
+  width: 13rem;
+  min-width: 13rem;
+}
+
+.syllabus-coverage-table__sticky--header:not(.syllabus-coverage-table__sticky--first-column) {
+  width: 13rem;
+  min-width: 13rem;
+}
+
+.syllabus-coverage-cell--changed {
+  background: color-mix(in srgb, var(--theme-success-150) 40%, white);
+}
+
+.syllabus-coverage-segmented-control {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.2rem;
+  border: 1px solid var(--theme-elevation-150);
+  border-radius: 999px;
+  background: var(--theme-elevation-50);
+}
+
+.syllabus-coverage-segmented-control__button {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--theme-elevation-600);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.35rem 0.6rem;
+  white-space: nowrap;
+}
+
+.syllabus-coverage-segmented-control__button--active {
+  background: var(--theme-success-500);
+  color: white;
+}
+
+@media (max-width: 1024px) {
+  .syllabus-coverage-table__sticky--first-column {
+    width: 16rem;
+    min-width: 14rem;
+    max-width: 16rem;
+  }
+}

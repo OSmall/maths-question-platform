@@ -1,6 +1,11 @@
 {
   "version": 1,
   "skills": {
+    "dbhub": {
+      "source": "bytebase/dbhub",
+      "sourceType": "github",
+      "computedHash": "8a5481f823e6cd662ec6c3587c43475f4bf86e80bf76806e511c34590114f53c"
+    },
     "frontend-design": {
       "source": "anthropics/skills",
       "sourceType": "github",

@@ -1,0 +1,8 @@
+[[sources]]
+id = "dev"
+dsn = "postgresql://neondb_owner:redacted@ep-plain-brook-a7xsritz-pooler.ap-southeast-2.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+
+[[tools]]
+name = "execute_sql"
+source = "dev"
+readonly = true

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, mock, vi } from 'bun:test'
 import { ResultAsync } from 'neverthrow'
 
 import { NotANumberError } from '@/lib/errors'
-import type { Question } from '@/lib/domain/question'
+import type { RenderableQuestion } from '@/lib/domain/question'
 
 const fetchQuestionByIdAndDraft = mock((id: number, draft: boolean) =>
   ResultAsync.fromPromise(Promise.resolve(createQuestion(id, draft)), (error) => error as Error),
@@ -54,17 +54,21 @@ describe('getQuestionById', () => {
   })
 })
 
-function createQuestion(id: number, shuffle: boolean): Question {
+function createQuestion(id: number, shuffle: boolean): RenderableQuestion {
   return {
-    id,
-    richText: undefined,
+    id: id,
+    index: id,
+    version: 1,
+    seed: 'seed',
+    prompt: undefined,
+    subTopics: [],
     parts: [
       {
         id: 'part-1',
-        richText: undefined,
-        answerMechanism: {
+        prompt: undefined,
+        response: {
           type: 'multipleChoice',
-          choices: [{ id: 'answer-1', text: 'Option A' }],
+          choices: { 'answer-1': { id: 'answer-1', text: 'Option A' } },
           shuffle,
         },
       },

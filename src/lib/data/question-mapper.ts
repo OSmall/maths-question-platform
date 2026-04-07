@@ -1,95 +1,93 @@
-import { type Result } from 'neverthrow'
-import { questionSchema } from '@/lib/domain/question'
-import { QuestionNotRenderableError } from '@/lib/errors'
-import type { Question as PayloadQuestion } from '@/payload/payload-types'
-import type { PayloadQuestionForDomain } from '@/lib/repository/question-repository'
-import { z } from 'zod'
-import { parseWithSchema } from '@/lib/utils/validation'
+import type { PayloadQuestionForAttempt as PayloadQuestionForRender } from '@/lib/repository/question-repository'
+import type {
+  Question as PayloadQuestion,
+  SubTopic as PayloadSubTopicDocument,
+} from '@/payload/payload-types'
+import * as R from 'remeda'
 
-type PayloadQuestionToDomainResult = Result<
-  z.output<typeof questionSchema>,
-  QuestionNotRenderableError
->
+type PayloadQuestionPart = PayloadQuestion['parts'][number]
+type PayloadQuestionResponse = PayloadQuestionPart['response'] | undefined
+type PayloadSubTopic = (number | PayloadSubTopicDocument) | null | undefined
 
-export function payloadQuestionToDomain(
-  payloadQuestion: PayloadQuestionForDomain,
-): PayloadQuestionToDomainResult {
-  const candidateQuestion = payloadQuestionToCandidate(payloadQuestion)
+export function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuestionForRender) {
+  const parts = Array.isArray(payloadQuestion.parts) ? payloadQuestion.parts : []
+  const isMultipart = parts.length > 1
 
-  return parseWithSchema(questionSchema, candidateQuestion).mapErr(
-    (error) => new QuestionNotRenderableError(error),
-  )
-}
-
-function payloadQuestionToCandidate(payloadQuestion: PayloadQuestionForDomain): QuestionCandidate {
   return {
     id: payloadQuestion.id,
-    richText: payloadQuestion.overallQuestionRichText ?? undefined,
-    parts: Array.isArray(payloadQuestion.parts)
-      ? payloadQuestion.parts.map(payloadQuestionPartToCandidate)
-      : undefined,
+    version: 10, // todo just placeholder for now
+    index: 1, // todo just placeholder for now
+    prompt: payloadQuestion.prompt ?? undefined,
+    subTopics: mapPayloadSubTopics(payloadQuestion.subTopics),
+    parts: parts.map((payloadQuestionPart: PayloadQuestionPart) => ({
+      id: payloadQuestionPart?.id ?? undefined,
+      prompt: isMultipart ? (payloadQuestionPart?.prompt ?? undefined) : undefined,
+      response: payloadResponseToAttemptCandidate(payloadQuestionPart?.response),
+    })),
   }
 }
 
-function payloadQuestionPartToCandidate(payloadQuestionPart: PayloadQuestion['parts'][number]) {
-  return {
-    id: payloadQuestionPart?.id ?? undefined,
-    richText: payloadQuestionPart?.partRichText ?? undefined,
-    answerMechanism: payloadAnswerMechanismToCandidate(payloadQuestionPart?.answerMechanism?.[0]),
-  }
-}
-
-function payloadAnswerMechanismToCandidate(
-  payloadAnswerMechanism: PayloadQuestion['parts'][number]['answerMechanism'][number] | undefined,
-) {
-  switch (payloadAnswerMechanism?.blockType) {
+function payloadResponseToAttemptCandidate(payloadResponse: PayloadQuestionResponse) {
+  switch (payloadResponse?.type) {
     case 'selfReport':
-    case 'freeTextValidation':
+    case 'shortText':
       return {
-        type: payloadAnswerMechanism.blockType,
+        type: payloadResponse.type,
       }
     case 'multipleChoice':
       return {
-        type: payloadAnswerMechanism.blockType,
-        choices: Array.isArray(payloadAnswerMechanism.answers)
-          ? payloadAnswerMechanism.answers.map((answer) => ({
-              id: answer?.id ?? undefined,
-              text: answer?.answer ?? undefined,
-            }))
-          : undefined,
-        shuffle: payloadAnswerMechanism.shuffle,
+        type: payloadResponse.type,
+        choices: R.pipe(
+          payloadResponse.multipleChoice?.choices,
+          (arr) => arr ?? [],
+          R.filter(
+            (choice): choice is typeof choice & { id: NonNullable<typeof choice.id> } =>
+              choice.id !== undefined && choice.id !== null,
+          ),
+          R.map(
+            (choice) =>
+              [
+                choice.id,
+                {
+                  id: choice.id,
+                  text: choice.text,
+                },
+              ] as const,
+          ),
+          R.fromEntries(),
+        ),
+        shuffle: payloadResponse.multipleChoice?.shuffle,
       }
     default:
       return undefined
   }
 }
 
-type QuestionCandidate = {
-  id?: number
-  richText?: unknown
-  parts?: QuestionPartCandidate[]
+function mapPayloadSubTopics(payloadSubTopics: PayloadQuestionForRender['subTopics']) {
+  if (!Array.isArray(payloadSubTopics)) {
+    return []
+  }
+
+  return payloadSubTopics
+    .map((payloadSubTopic) => mapPayloadSubTopic(payloadSubTopic))
+    .filter(
+      (payloadSubTopic): payloadSubTopic is NonNullable<typeof payloadSubTopic> =>
+        payloadSubTopic != null,
+    )
 }
 
-type QuestionPartCandidate = {
-  id?: string
-  richText?: unknown
-  answerMechanism?: AnswerMechanismCandidate
-}
+function mapPayloadSubTopic(payloadSubTopic: PayloadSubTopic) {
+  if (!payloadSubTopic || typeof payloadSubTopic === 'number') {
+    return undefined
+  }
 
-type AnswerMechanismCandidate =
-  | {
-      type: 'selfReport'
-    }
-  | {
-      type: 'freeTextValidation'
-    }
-  | {
-      type: 'multipleChoice'
-      choices?: MultipleChoiceChoiceCandidate[]
-      shuffle?: boolean
-    }
+  if (!payloadSubTopic.topic || typeof payloadSubTopic.topic === 'number') {
+    return undefined
+  }
 
-type MultipleChoiceChoiceCandidate = {
-  id?: string
-  text?: string
+  return {
+    id: payloadSubTopic.id,
+    subtopicName: payloadSubTopic.name,
+    topicName: payloadSubTopic.topic.name,
+  }
 }
