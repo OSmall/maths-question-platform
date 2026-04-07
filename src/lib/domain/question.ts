@@ -1,3 +1,4 @@
+import { hasText } from '@payloadcms/richtext-lexical/shared'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import { z } from 'zod'
 
@@ -37,7 +38,7 @@ export const renderableQuestionSchema = z
     parts: z.array(renderableQuestionPartSchema).min(1),
   })
   .superRefine((question, ctx) => {
-    if (question.parts.length === 1 && !question.prompt) {
+    if (question.parts.length === 1 && !hasText(question.prompt)) {
       ctx.addIssue({
         code: 'custom',
         message: 'Single-part questions must use the top-level prompt.',
@@ -47,7 +48,7 @@ export const renderableQuestionSchema = z
 
     if (question.parts.length > 1) {
       question.parts.forEach((part, index) => {
-        if (!part.prompt) {
+        if (!hasText(part.prompt)) {
           ctx.addIssue({
             code: 'custom',
             message: 'Multipart questions require a prompt for every part.',

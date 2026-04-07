@@ -1,4 +1,5 @@
-import type { CollectionConfig, Field } from 'payload'
+import { hasText } from '@payloadcms/richtext-lexical/shared'
+import type { CollectionConfig, Field, Validate } from 'payload'
 
 type MultipleChoiceChoice = {
   isCorrect?: boolean | null
@@ -21,36 +22,9 @@ type ResponseGroupValue = {
   } | null
 }
 
+type RichTextValue = Parameters<typeof hasText>[0]
+
 const normalizeSimpleString = (value: string) => value.trim().replace(/\s+/g, ' ')
-
-function hasMeaningfulRichTextContent(value: unknown): boolean {
-  if (!value || typeof value !== 'object') {
-    return false
-  }
-
-  if (Array.isArray(value)) {
-    return value.some(hasMeaningfulRichTextContent)
-  }
-
-  if ('text' in value && typeof value.text === 'string' && value.text.trim().length > 0) {
-    return true
-  }
-
-  if (
-    'type' in value &&
-    typeof value.type === 'string' &&
-    value.type !== 'root' &&
-    value.type !== 'paragraph'
-  ) {
-    return true
-  }
-
-  if ('children' in value && Array.isArray(value.children)) {
-    return value.children.some(hasMeaningfulRichTextContent)
-  }
-
-  return false
-}
 
 function getPartCount(data: unknown) {
   if (!data || typeof data !== 'object' || !('parts' in data) || !Array.isArray(data.parts)) {
@@ -60,20 +34,20 @@ function getPartCount(data: unknown) {
   return data.parts.length
 }
 
-function validateTopLevelPrompt(value: unknown, data: unknown) {
+const validateTopLevelPrompt: Validate<RichTextValue> = (value, { data }) => {
   const partCount = getPartCount(data)
 
-  if (partCount === 1 && !hasMeaningfulRichTextContent(value)) {
+  if (partCount === 1 && !hasText(value)) {
     return 'Single-part questions must use the top-level prompt.'
   }
 
   return true
 }
 
-function validatePartPrompt(value: unknown, data: unknown) {
+const validatePartPrompt: Validate<RichTextValue> = (value, { data }) => {
   const partCount = getPartCount(data)
 
-  if (partCount > 1 && !hasMeaningfulRichTextContent(value)) {
+  if (partCount > 1 && !hasText(value)) {
     return 'Multipart questions require a prompt for every part.'
   }
 
@@ -249,7 +223,7 @@ export const Question: CollectionConfig = {
       name: 'prompt',
       label: 'Question Prompt / Shared Context',
       type: 'richText',
-      validate: (value, { data }) => validateTopLevelPrompt(value, data),
+      validate: validateTopLevelPrompt,
       admin: {
         description:
           'Use this for the full prompt on single-part questions, or shared context that sits above all parts on multipart questions.',
@@ -269,7 +243,7 @@ export const Question: CollectionConfig = {
           name: 'prompt',
           label: 'Part Prompt',
           type: 'richText',
-          validate: (value, { data }) => validatePartPrompt(value, data),
+          validate: validatePartPrompt,
           admin: {
             condition: (data) => getPartCount(data) > 1,
             description:
