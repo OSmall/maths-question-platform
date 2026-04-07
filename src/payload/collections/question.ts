@@ -210,6 +210,13 @@ export const Question: CollectionConfig = {
           ? `/api/draft?slug=${encodeURIComponent(`/question/${data.id}`)}`
           : '',
     },
+    components: {
+      edit: {
+        editMenuItems: [
+          '/components/admin/question-save-and-add-another-menu-item#QuestionSaveAndAddAnotherMenuItem',
+        ],
+      },
+    },
   },
   versions: {
     drafts: {
