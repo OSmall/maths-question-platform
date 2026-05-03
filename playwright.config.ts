@@ -35,7 +35,10 @@ export default defineConfig({
   ],
   webServer: {
     command: 'bun --bun run dev',
-    reuseExistingServer: true,
-    url: 'http://localhost:3000',
+    reuseExistingServer: false,
+    timeout: 60_000,
+    wait: {
+      stdout: /Local:\s+(?<playwright_base_url>https?:\/\/(?:localhost|127\.0\.0\.1):\d+)/,
+    },
   },
 })

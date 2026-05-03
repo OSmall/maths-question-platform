@@ -4,4 +4,9 @@ npm.package_manager = "bun"
 [tools]
 bun = "1.3.11"
 "npm:@bytebase/dbhub" = "0.21.1"
+"npm:@playwright/mcp" = "0.0.73"
 "npm:vercel" = "50.40.0"
+
+[tasks.install-playwright-mcp-browser]
+description = "Install browser used by Playwright MCP"
+run = "playwright-mcp install-browser chromium"

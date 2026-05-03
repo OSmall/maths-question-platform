@@ -10,6 +10,11 @@
       "type": "local",
       "command": ["dbhub"],
       "enabled": false
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["playwright-mcp", "--browser", "chromium", "--viewport-size", "1440x900"],
+      "enabled": true
     }
   }
 }

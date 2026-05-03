@@ -5,6 +5,11 @@
 - For meaningful code changes, run `bun run lint`, `bun run build`, and/or `bun run test`.
 - If UI or user flows change, run `bun run test:e2e`.
 
+## Frontend Browser Access
+
+- Playwright MCP is available for interactive frontend inspection; before using it against the local app, check whether `http://localhost:3000` is reachable.
+- If the app is not running and browser access is needed, start it with `bun run dev` and wait for `localhost:3000` before navigating.
+
 ## Repo Context
 
 - This project uses Neon branch-based environments with Vercel previews.
