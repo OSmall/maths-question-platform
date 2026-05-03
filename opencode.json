@@ -9,7 +9,7 @@
     "dbhub": {
       "type": "local",
       "command": ["dbhub"],
-      "enabled": false
+      "enabled": true
     },
     "playwright": {
       "type": "local",

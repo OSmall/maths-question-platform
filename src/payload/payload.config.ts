@@ -11,6 +11,7 @@ import { Media } from '@/payload/collections/media'
 import { Question } from '@/payload/collections/question'
 import { Syllabus } from '@/payload/collections/syllabus'
 import { SyllabusSubTopic } from '@/payload/collections/syllabus-sub-topic'
+import { StudySession } from '@/payload/collections/study-session'
 import { Topic } from '@/payload/collections/topic'
 import { SubTopic } from '@/payload/collections/sub-topic'
 
@@ -24,7 +25,7 @@ export default buildConfig({
       baseDir: path.resolve(dirname),
     },
   },
-  collections: [Users, Media, Topic, SubTopic, Syllabus, SyllabusSubTopic, Question],
+  collections: [Users, Media, Topic, SubTopic, Syllabus, SyllabusSubTopic, Question, StudySession],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {

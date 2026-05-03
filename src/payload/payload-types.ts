@@ -74,6 +74,7 @@ export interface Config {
     syllabus: Syllabus;
     syllabusSubTopic: SyllabusSubTopic;
     question: Question;
+    studySession: StudySession;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     syllabus: SyllabusSelect<false> | SyllabusSelect<true>;
     syllabusSubTopic: SyllabusSubTopicSelect<false> | SyllabusSubTopicSelect<true>;
     question: QuestionSelect<false> | QuestionSelect<true>;
+    studySession: StudySessionSelect<false> | StudySessionSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -329,6 +331,44 @@ export interface Question {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Persisted learner study sessions with locked question versions and answers.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "studySession".
+ */
+export interface StudySession {
+  id: number;
+  user?: (number | null) | User;
+  state: 'notStarted' | 'started' | 'finished';
+  begunAt?: string | null;
+  endedAt?: string | null;
+  questions: {
+    question: number | Question;
+    questionVersionId: string;
+    status: 'notStarted' | 'skipped' | 'answered';
+    flagged: boolean;
+    answeredAt?: string | null;
+    skippedAt?: string | null;
+    answers: {
+      partId: string;
+      type: 'unanswered' | 'multipleChoice' | 'shortText' | 'selfReport';
+      multipleChoice?: {
+        choiceId?: string | null;
+      };
+      shortText?: {
+        answer?: string | null;
+      };
+      selfReport?: {
+        answer?: boolean | null;
+      };
+      id?: string | null;
+    }[];
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -379,6 +419,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'question';
         value: number | Question;
+      } | null)
+    | ({
+        relationTo: 'studySession';
+        value: number | StudySession;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -552,6 +596,51 @@ export interface QuestionSelect<T extends boolean = true> {
   updatedAt?: T;
   createdAt?: T;
   _status?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "studySession_select".
+ */
+export interface StudySessionSelect<T extends boolean = true> {
+  user?: T;
+  state?: T;
+  begunAt?: T;
+  endedAt?: T;
+  questions?:
+    | T
+    | {
+        question?: T;
+        questionVersionId?: T;
+        status?: T;
+        flagged?: T;
+        answeredAt?: T;
+        skippedAt?: T;
+        answers?:
+          | T
+          | {
+              partId?: T;
+              type?: T;
+              multipleChoice?:
+                | T
+                | {
+                    choiceId?: T;
+                  };
+              shortText?:
+                | T
+                | {
+                    answer?: T;
+                  };
+              selfReport?:
+                | T
+                | {
+                    answer?: T;
+                  };
+              id?: T;
+            };
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
