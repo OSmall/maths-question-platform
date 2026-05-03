@@ -1,15 +1,15 @@
 import { afterEach, describe, expect, it, mock, vi } from 'bun:test'
+import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import { ResultAsync } from 'neverthrow'
 
-import { NotANumberError } from '@/lib/errors'
-import type { RenderableQuestion } from '@/lib/domain/question'
+import type { PayloadQuestionForAttempt } from '@/lib/repository/question-repository'
 
-const fetchQuestionByIdAndDraft = mock((id: number, draft: boolean) =>
-  ResultAsync.fromPromise(Promise.resolve(createQuestion(id, draft)), (error) => error as Error),
+const queryPayloadForQuestionAttemptByIdAndDraftResult = mock((id: number, draft: boolean) =>
+  ResultAsync.fromPromise(Promise.resolve(createPayloadQuestion(id, draft)), (error) => error as Error),
 )
 
 mock.module('@/lib/repository/question-repository', () => ({
-  fetchQuestionByIdAndDraft,
+  queryPayloadForQuestionAttemptByIdAndDraftResult,
 }))
 
 const { getQuestionById } = await import('@/lib/service/question-service')
@@ -19,48 +19,79 @@ describe('getQuestionById', () => {
     vi.clearAllMocks()
   })
 
-  it('parses the id string and passes the draft flag to the repository', async () => {
-    const expectedQuestion = createQuestion(42, true)
-    fetchQuestionByIdAndDraft.mockImplementationOnce((id: number, draft: boolean) =>
+  it('passes the id and draft flag to the repository and applies the render seed', async () => {
+    queryPayloadForQuestionAttemptByIdAndDraftResult.mockImplementationOnce((id: number, draft: boolean) =>
       ResultAsync.fromPromise(
-        Promise.resolve(createQuestion(id, draft)),
+        Promise.resolve(createPayloadQuestion(id, draft)),
         (error) => error as Error,
       ),
     )
 
-    const result = await getQuestionById('42', { draft: true })
+    const result = await getQuestionById(42, { draft: true, seed: 'seed-123' })
 
-    expect(fetchQuestionByIdAndDraft).toHaveBeenCalledWith(42, true)
+    expect(queryPayloadForQuestionAttemptByIdAndDraftResult).toHaveBeenCalledWith(42, true)
     expect(result.isOk()).toBe(true)
 
     if (result.isErr()) {
       throw result.error
     }
 
-    expect(result.value).toEqual(expectedQuestion)
-  })
-
-  it('returns a not-a-number error without querying the repository', async () => {
-    const result = await getQuestionById('abc')
-
-    expect(fetchQuestionByIdAndDraft).not.toHaveBeenCalled()
-    expect(result.isErr()).toBe(true)
-
-    if (result.isOk()) {
-      throw new Error('Expected an error result')
-    }
-
-    expect(result.error).toBeInstanceOf(NotANumberError)
+    expect(result.value).toEqual({
+      id: 42,
+      index: 1,
+      version: 10,
+      seed: 'seed-123',
+      prompt: nonEmptyRichText,
+      subTopics: [],
+      parts: [
+        {
+          id: 'part-1',
+          prompt: undefined,
+          response: {
+            type: 'multipleChoice',
+            choices: { 'answer-1': { id: 'answer-1', text: 'Option A' } },
+            shuffle: true,
+          },
+        },
+      ],
+    })
   })
 })
 
-function createQuestion(id: number, shuffle: boolean): RenderableQuestion {
-  return {
-    id: id,
-    index: id,
+const nonEmptyRichText = {
+  root: {
+    type: 'root',
+    children: [
+      {
+        type: 'paragraph',
+        version: 1,
+        children: [
+          {
+            type: 'text',
+            version: 1,
+            text: 'Prompt text',
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+          },
+        ],
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+      },
+    ],
+    direction: 'ltr',
+    format: '',
+    indent: 0,
     version: 1,
-    seed: 'seed',
-    prompt: undefined,
+  },
+} as unknown as SerializedEditorState
+
+function createPayloadQuestion(id: number, shuffle: boolean): PayloadQuestionForAttempt {
+  return {
+    id,
+    prompt: nonEmptyRichText,
     subTopics: [],
     parts: [
       {
@@ -68,10 +99,12 @@ function createQuestion(id: number, shuffle: boolean): RenderableQuestion {
         prompt: undefined,
         response: {
           type: 'multipleChoice',
-          choices: { 'answer-1': { id: 'answer-1', text: 'Option A' } },
-          shuffle,
+          multipleChoice: {
+            choices: [{ id: 'answer-1', text: 'Option A', isCorrect: true }],
+            shuffle,
+          },
         },
       },
     ],
-  }
+  } as unknown as PayloadQuestionForAttempt
 }

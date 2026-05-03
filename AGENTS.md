@@ -20,6 +20,8 @@
 - For Payload schema or data-model changes, create a migration with `bun run migrate:create`.
   - When pushing a commit that contains these Payload changes, the preview deployment needs this migration created to
     deploy properly.
+  - Payload's automatic DB migration push is turned off in the local environment. When making a change to the schema,
+    run `bun run migrate`.
 
 ## Project Code Shape
 
@@ -32,6 +34,12 @@
   in tests.
 - The domain contains data types that are used for the business logic. Translation between the backend types and the
   domain types is done in mappers in the `data` folder. It is also ok to put them in the repsitory if small.
+- In project source, prefer object spread over `.extend()` when composing Zod object schemas.
+  Use plain shape objects or `Schema.shape` as appropriate.
+- Prefer Zod 4 top-level format validators such as `z.email()`, `z.uuid()`, and `z.iso.datetime()` over deprecated
+  string method validators.
+- Do not import Payload collection config into domain schemas just to avoid duplicated literals. Keep domain and Payload
+  schema layers separate.
 
 ## UI Philosophy
 
