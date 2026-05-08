@@ -27,7 +27,7 @@ export const QuestionRenderer = ({
   return (
     <form action={submitQuestionAnswersFormAction} className="mx-auto w-full max-w-310">
       <input name="questionId" type="hidden" value={question.id} />
-      <input name="seed" type="hidden" value={question.seed} />
+      <input name="seed" type="hidden" value={question.shuffleKeyBase} />
 
       <div className="flex flex-col gap-4 lg:gap-6">
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
@@ -112,7 +112,7 @@ export const QuestionRenderer = ({
                             <QuestionAnswerField
                               questionPart={part}
                               questionSubmissionEvaluation={questionSubmissionEvaluation}
-                              seed={question.seed}
+                              shuffleKeyBase={question.shuffleKeyBase}
                             />
                           </div>
                         </div>

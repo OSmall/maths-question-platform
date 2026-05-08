@@ -7,13 +7,13 @@ import { cn } from '@/lib/utils'
 type QuestionAnswerFieldProps = {
   questionPart: RenderableQuestionPart
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
-  seed: string
+  shuffleKeyBase: string
 }
 
 export const QuestionAnswerField = ({
   questionPart,
   questionSubmissionEvaluation,
-  seed,
+  shuffleKeyBase,
 }: QuestionAnswerFieldProps) => {
   const fieldName = `a.${questionPart.id}`
   const questionSubmissionEvaluationPart = questionSubmissionEvaluation.parts[questionPart.id]
@@ -33,7 +33,7 @@ export const QuestionAnswerField = ({
         ) // todo think about improving this error handling or aligning the types such that the response types are equal
       const choiceObjs = Object.values(questionPart.response.choices)
       const displayedChoices = questionPart.response.shuffle
-        ? shuffleChoices(choiceObjs, `${seed}:${questionPart.id}`)
+        ? shuffleChoices(choiceObjs, `${shuffleKeyBase}:${questionPart.id}`)
         : choiceObjs
 
       return (

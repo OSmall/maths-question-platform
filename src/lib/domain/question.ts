@@ -31,10 +31,10 @@ export const renderableQuestionSchema = z
   .object({
     index: z.number(), // index within the list of questions
     id: z.number(), // globally unique identifier
-    version: z.number(),
+    version: z.string().min(1),
     prompt: richTextSchema,
     subTopics: z.array(subTopicSchema),
-    seed: z.string(), // used for predictable randomness i.e. shuffling multiple-choice choices
+    shuffleKeyBase: z.string(), // used for predictable randomness i.e. shuffling multiple-choice choices
     parts: z.array(renderableQuestionPartSchema).min(1),
   })
   .superRefine((question, ctx) => {

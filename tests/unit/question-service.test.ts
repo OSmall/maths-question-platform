@@ -19,7 +19,7 @@ describe('getQuestionById', () => {
     vi.clearAllMocks()
   })
 
-  it('passes the id and draft flag to the repository and applies the render seed', async () => {
+  it('passes the id and draft flag to the repository and applies the shuffle key base', async () => {
     queryPayloadForQuestionAttemptByIdAndDraftResult.mockImplementationOnce((id: number, draft: boolean) =>
       ResultAsync.fromPromise(
         Promise.resolve(createPayloadQuestion(id, draft)),
@@ -27,7 +27,7 @@ describe('getQuestionById', () => {
       ),
     )
 
-    const result = await getQuestionById(42, { draft: true, seed: 'seed-123' })
+    const result = await getQuestionById(42, { draft: true, shuffleKeyBase: 'seed-123' })
 
     expect(queryPayloadForQuestionAttemptByIdAndDraftResult).toHaveBeenCalledWith(42, true)
     expect(result.isOk()).toBe(true)
@@ -38,9 +38,9 @@ describe('getQuestionById', () => {
 
     expect(result.value).toEqual({
       id: 42,
-      index: 1,
-      version: 10,
-      seed: 'seed-123',
+      index: 0,
+      version: 'question-42',
+      shuffleKeyBase: 'seed-123',
       prompt: nonEmptyRichText,
       subTopics: [],
       parts: [

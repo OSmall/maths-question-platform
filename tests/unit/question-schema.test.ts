@@ -117,12 +117,12 @@ function createQuestion(overrides?: {
   parts?: Array<ReturnType<typeof createPart>>
 }) {
   return {
-    index: 1,
+    index: 0,
     id: 1,
-    version: 1,
+    version: 'version-1',
     prompt: overrides?.prompt ?? nonEmptyRichText,
     subTopics: [],
-    seed: 'seed',
+    shuffleKeyBase: 'seed',
     parts: overrides?.parts ?? [createPart()],
   }
 }

@@ -48,7 +48,7 @@ export default async function QuestionPage({
     redirect(`/question/${id}?${seededSearchParams.toString()}`)
   }
 
-  const questionResult = await getQuestionById(questionId, { draft: isDraftMode, seed })
+  const questionResult = await getQuestionById(questionId, { draft: isDraftMode, shuffleKeyBase: seed })
   const questionSubmissionEvaluationResult = await getQuestionSubmissionEvaluation(
     questionId,
     resolvedSearchParams,

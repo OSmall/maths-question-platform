@@ -59,3 +59,24 @@ export class QuestionNotRenderableError extends AppError {
     this.validationError = validationError
   }
 }
+
+export class StudySessionQuestionIndexError extends FormatError {
+  static ERROR_NAME = 'STUDY_SESSION_QUESTION_INDEX_ERROR'
+  constructor(studySessionId: number, questionIndex: number, options: ErrorOptions = {}) {
+    super(`Question index ${questionIndex} is out of range for study session ${studySessionId}`, options)
+  }
+}
+
+export class StudySessionQuestionAlreadyAnsweredError extends AppError {
+  static ERROR_NAME = 'STUDY_SESSION_QUESTION_ALREADY_ANSWERED_ERROR'
+  constructor(studySessionId: number, questionIndex: number, options: ErrorOptions = {}) {
+    super(`Question ${questionIndex} in study session ${studySessionId} is already answered`, options)
+  }
+}
+
+export class StudySessionUnsupportedStateError extends AppError {
+  static ERROR_NAME = 'STUDY_SESSION_UNSUPPORTED_STATE_ERROR'
+  constructor(studySessionId: number, state: string, options: ErrorOptions = {}) {
+    super(`Study session ${studySessionId} is in unsupported state ${state}`, options)
+  }
+}

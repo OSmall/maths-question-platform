@@ -15,8 +15,8 @@ export function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuesti
 
   return {
     id: payloadQuestion.id,
-    version: 10, // todo just placeholder for now
-    index: 1, // todo just placeholder for now
+    version: `question-${payloadQuestion.id}`,
+    index: 0,
     prompt: payloadQuestion.prompt ?? undefined,
     subTopics: mapPayloadSubTopics(payloadQuestion.subTopics),
     parts: parts.map((payloadQuestionPart: PayloadQuestionPart) => ({
