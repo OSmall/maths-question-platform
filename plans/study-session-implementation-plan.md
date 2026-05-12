@@ -17,6 +17,12 @@ This plan implements GitHub issue #14: persisted StudySessions with locked quest
 - Preview Flag is local-only; StudySession Flag is persisted with SWR optimistic updates.
 - Submit and Skip use server actions. Continue is navigation/no-op on the last question.
 - Timer is a tiny client island ticking every second.
+- Add Payload-backed frontend authentication before StudySession server actions/routes.
+- Use one Payload `users` collection with optional multi-role values: `admin` and `student`.
+- Public frontend routes are `/`, `/login`, and `/test-landing-page`; other frontend pages require login by default.
+- `/question/**` is admin-only authoring/preview UI.
+- `/study-session/**` requires `student` and is always owner-only in the frontend, with no admin frontend bypass.
+- `question` and authoring collections are admin-only; StudySession rendering authorizes the owned session first, then uses trusted server access to fetch the locked question version.
 
 ## Completed Stages
 
@@ -138,7 +144,57 @@ Notes:
 
 - Verification passed with existing lint warnings in `src/lib/domain/question.ts`, `src/lib/repository/question-repository.ts`, and historical migration files.
 
-### Stage 5: Server Actions
+### Stage 5: Authentication, Roles, And Frontend Ownership
+
+Status: Pending
+
+- Lean on Payload authentication rather than adding a separate auth provider.
+- Keep the existing Payload `users` collection as the single auth collection.
+- Add optional multi-select `roles` values: `admin` and `student`.
+- Allow users to have zero roles, one role, or both roles.
+- Save roles to JWT for server-side role checks.
+- Backfill existing users to `admin` and `student`.
+- Ensure the first-ever user in a fresh environment gets `admin`.
+- For later admin-created users, roles are whatever the admin selects in Payload admin; no automatic student role is required.
+- Users with zero roles may log in, but cannot access role-specific protected areas.
+- Restrict Payload admin access to users with `admin`.
+- Make authoring collections admin-only, including `question`, taxonomy, syllabus, syllabus coverage, and media management.
+- Keep `/`, `/login`, and `/test-landing-page` public.
+- Add a custom frontend `/login` page that uses Payload's `@payloadcms/next/auth` login helper.
+- Do not reuse Payload admin login as the frontend/student login UI.
+- Add current-session logout using Payload's logout helper.
+- Redirect unauthenticated protected-route access to `/login?redirect=...`.
+- Accept only safe relative redirect paths.
+- On successful login, use the valid redirect first.
+- If no redirect exists, send users with `admin` to `/admin`; otherwise send them to `/`.
+- Redirect already-authenticated users away from `/login` using the same destination rules.
+- Show login when signed out and logout when signed in.
+- Show the admin link only for users with `admin`.
+- Add shared auth helpers for reading the current Payload user from `headers()` and checking roles.
+- Add Payload access helpers for admin-only, authenticated, and owned-resource rules.
+- Make `StudySession.user` required.
+- Create a migration that fails if any existing StudySession has no owner.
+- Enforce frontend StudySession access as `studySession.user === currentUser.id`, including for admins.
+- Keep admin access to all StudySessions available only through Payload admin.
+- For user-facing Payload Local API calls where collection access should apply, pass `user` with `overrideAccess: false`.
+- For StudySession question rendering, authorize the owned StudySession first, then fetch the locked question version with trusted server access.
+- Treat unauthenticated access as a login redirect.
+- Treat authenticated wrong-role or wrong-owner access as `notFound()`.
+- Add Playwright coverage for login flow behavior, including successful login, failed login, protected-route redirect, post-login redirect, and logout.
+- When implementing this stage, explore exact Payload/Next.js API details in the codebase and official docs; feel free to ask the user where product behavior is still ambiguous.
+
+Verification target:
+
+- `bun run generate:types`
+- `bun run migrate:create`
+- `bun run migrate`
+- `bun run lint`
+- `bun run typecheck`
+- `bun run test:unit`
+- `bun run build`
+- `bun run test:e2e`
+
+### Stage 6: Server Actions
 
 Status: Pending
 
@@ -156,7 +212,7 @@ Verification target:
 - `bun run test:unit`
 - `bun run build`
 
-### Stage 6: Shared Question UI Refactor
+### Stage 7: Shared Question UI Refactor
 
 Status: Pending
 
@@ -177,7 +233,7 @@ Verification target:
 - `bun run test:unit`
 - `bun run build`
 
-### Stage 7: StudySession Route
+### Stage 8: StudySession Route
 
 Status: Pending
 
@@ -197,7 +253,7 @@ Verification target:
 - `bun run build`
 - `bun run test:e2e` if stable test data exists or is added.
 
-### Stage 8: Preview Route Update
+### Stage 9: Preview Route Update
 
 Status: Pending
 
@@ -219,7 +275,7 @@ Verification target:
 - `bun run build`
 - `bun run test:e2e` if stable test data exists or is added.
 
-### Stage 9: SWR And Sonner
+### Stage 10: SWR And Sonner
 
 Status: Pending
 
@@ -239,7 +295,7 @@ Verification target:
 - `bun run build`
 - Browser inspection with Playwright MCP for affected UI.
 
-### Stage 10: Final Verification
+### Stage 11: Final Verification
 
 Status: Pending
 
@@ -249,6 +305,6 @@ Status: Pending
 - Run `bun run typecheck`.
 - Run `bun run test:unit`.
 - Run `bun run build`.
-- Run `bun run test:e2e` if stable route/test data exists or is added.
+- Run `bun run test:e2e`, including the login flow coverage added in the auth stage.
 - Use Playwright MCP for interactive inspection of changed frontend flows.
 - In the PR/implementation summary, explicitly note that AC 7 changed from stored random seed to derived `shuffleKeyBase`.
