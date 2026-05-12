@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 import { PayloadQueryError } from '@/lib/errors'
 import { handleRepositoryError } from '@/lib/repository/repository-utils'
 import { StudySession } from '@/payload/collections/study-session'
-import type { QuestionSelect, StudySessionSelect } from '@/payload/payload-types'
+import type { QuestionSelect, StudySessionSelect, User } from '@/payload/payload-types'
 import config from '@payload-config'
 
 const studySessionSelect = {
@@ -67,13 +67,18 @@ const lockedQuestionVersionSelect = {
   },
 } as const satisfies QuestionSelect
 
-async function queryPayloadStudySessionById(id: number) {
+type UserAccessOptions = {
+  user?: User
+}
+
+async function queryPayloadStudySessionById(id: number, options: UserAccessOptions = {}) {
   const payload = await getPayload({ config })
 
   return payload.findByID({
     collection: 'studySession',
     id,
     depth: 0,
+    ...(options.user ? { overrideAccess: false, user: options.user } : {}),
     select: studySessionSelect,
   })
 }
@@ -89,7 +94,10 @@ async function queryLockedQuestionVersionById(id: string) {
   })
 }
 
-async function updatePayloadStudySession(studySession: PayloadStudySessionForService) {
+async function updatePayloadStudySession(
+  studySession: PayloadStudySessionForService,
+  options: UserAccessOptions = {},
+) {
   const payload = await getPayload({ config })
 
   return payload.update({
@@ -118,13 +126,14 @@ async function updatePayloadStudySession(studySession: PayloadStudySessionForSer
       })),
     },
     depth: 0,
+    ...(options.user ? { overrideAccess: false, user: options.user } : {}),
     select: studySessionSelect,
   })
 }
 
-export function fetchStudySessionByIdResult(id: number) {
+export function fetchStudySessionByIdResult(id: number, options: UserAccessOptions = {}) {
   return ResultAsync.fromPromise(
-    queryPayloadStudySessionById(id),
+    queryPayloadStudySessionById(id, options),
     handleRepositoryError(StudySession.slug, id),
   )
 }
@@ -136,8 +145,11 @@ export function fetchLockedQuestionVersionByIdResult(id: string) {
   )
 }
 
-export function updateStudySessionResult(studySession: PayloadStudySessionForService) {
-  return ResultAsync.fromPromise(updatePayloadStudySession(studySession), (error) => new PayloadQueryError(error))
+export function updateStudySessionResult(
+  studySession: PayloadStudySessionForService,
+  options: UserAccessOptions = {},
+) {
+  return ResultAsync.fromPromise(updatePayloadStudySession(studySession, options), (error) => new PayloadQueryError(error))
 }
 
 export type PayloadStudySessionForService = Awaited<ReturnType<typeof queryPayloadStudySessionById>>

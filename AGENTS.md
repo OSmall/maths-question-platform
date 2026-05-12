@@ -61,7 +61,8 @@
 - Keep services/domain canonical. After canonical data is fetched, server UI components may decide display concerns such
   as seeded ordering and SSR review rendering.
 - Prefer server actions for sending client data to the server.
-  - Always use `next-safe-action` to validate incoming data to server actions and business logic like auth.
+  - Always implement server actions through `next-safe-action`, including auth and no-input actions.
+  - Always use `next-safe-action` schemas to validate incoming data before server actions reach business logic.
 - All inputs to components should be pure data. No business logic, or inference should occur within a component. e.g. If
   a component needs to access the search params from a page, the component should handle the parsing of those params,
   the page should do that.

@@ -1,13 +1,13 @@
 import type { CollectionBeforeValidateHook, CollectionConfig, PayloadRequest } from 'payload'
 
+import { authenticated, ownerOrAdmin } from '@/payload/access'
+
 import {
   normalizeStudySessionInput,
   type QuestionVersionForStudySession,
   validateStudySessionQuestionRelationship,
   type StudySessionInput,
 } from './study-session-utils'
-
-const authenticated = ({ req }: { req: PayloadRequest }) => Boolean(req.user)
 
 const normalizeStudySession: CollectionBeforeValidateHook = async ({ data, operation, originalDoc, req }) => {
   return normalizeStudySessionInput({
@@ -61,9 +61,9 @@ export const StudySession: CollectionConfig = {
   },
   access: {
     create: authenticated,
-    delete: authenticated,
-    read: authenticated,
-    update: authenticated,
+    delete: ownerOrAdmin,
+    read: ownerOrAdmin,
+    update: ownerOrAdmin,
   },
   admin: {
     defaultColumns: ['id', 'user', 'state', 'begunAt', 'endedAt', 'updatedAt'],
@@ -77,6 +77,7 @@ export const StudySession: CollectionConfig = {
       name: 'user',
       type: 'relationship',
       relationTo: 'users' as never,
+      required: true,
     },
     {
       name: 'state',

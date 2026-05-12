@@ -1,9 +1,18 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 
+import { adminOnly } from '@/payload/access'
+
 import { normalizeSyllabusSubTopicInput, validateUniqueSyllabusSubTopic } from './syllabus-utils'
 
 export const SyllabusSubTopic: CollectionConfig = {
   slug: 'syllabusSubTopic',
+  access: {
+    admin: adminOnly,
+    create: adminOnly,
+    delete: adminOnly,
+    read: adminOnly,
+    update: adminOnly,
+  },
   labels: {
     plural: 'Syllabus Coverage',
     singular: 'Coverage Mapping',

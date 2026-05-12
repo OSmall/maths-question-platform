@@ -4,6 +4,8 @@ import { QuestionRenderer } from '@/components/question/question-renderer'
 import { QuestionNotRenderableError } from '@/lib/errors'
 import { getQuestionSubmissionEvaluation } from '@/lib/service/question-evaluation-service'
 import { getQuestionById } from '@/lib/service/question-service'
+import { USER_ROLES } from '@/lib/auth/roles'
+import { requireRole } from '@/lib/auth/protection'
 import { getSingleSearchParam } from '@/lib/utils/search-params'
 import { Result } from 'neverthrow'
 import { draftMode } from 'next/headers'
@@ -31,6 +33,8 @@ export default async function QuestionPage({
     console.warn(`Question id [${id}] is not a number, redirecting to Not Found page`)
     notFound()
   }
+
+  await requireRole(buildQuestionPath(id, resolvedSearchParams), USER_ROLES.admin)
 
   const seed = getSingleSearchParam(resolvedSearchParams.seed)
   if (!seed) {
@@ -87,4 +91,19 @@ export default async function QuestionPage({
       notFound()
     },
   )
+}
+
+function buildQuestionPath(id: string, searchParams: Record<string, string | string[] | undefined>) {
+  const serializedSearchParams = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) {
+      value.forEach((entry) => serializedSearchParams.append(key, entry))
+    } else if (value != null) {
+      serializedSearchParams.set(key, value)
+    }
+  }
+
+  const queryString = serializedSearchParams.toString()
+  return queryString ? `/question/${id}?${queryString}` : `/question/${id}`
 }

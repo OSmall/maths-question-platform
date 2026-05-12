@@ -1,9 +1,18 @@
 import type { CollectionConfig } from 'payload'
 
+import { adminOnly } from '@/payload/access'
+
 import { normalizeSyllabusInput } from './syllabus-utils'
 
 export const Syllabus: CollectionConfig = {
   slug: 'syllabus',
+  access: {
+    admin: adminOnly,
+    create: adminOnly,
+    delete: adminOnly,
+    read: adminOnly,
+    update: adminOnly,
+  },
   labels: {
     plural: 'Syllabuses',
     singular: 'Syllabus',

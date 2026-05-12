@@ -134,6 +134,10 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * Optional frontend/admin roles. Users may have zero, one, or multiple roles.
+   */
+  roles?: ('admin' | 'student')[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -338,7 +342,7 @@ export interface Question {
  */
 export interface StudySession {
   id: number;
-  user?: (number | null) | User;
+  user: number | User;
   state: 'notStarted' | 'started' | 'finished';
   begunAt?: string | null;
   endedAt?: string | null;
@@ -471,6 +475,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  roles?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;

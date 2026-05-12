@@ -1,9 +1,18 @@
 import type { CollectionConfig, PayloadRequest } from 'payload'
 
+import { adminOnly } from '@/payload/access'
+
 import { normalizeSubTopicInput, validateUniqueSubTopicName } from './taxonomy-utils'
 
 export const SubTopic: CollectionConfig = {
   slug: 'subTopic',
+  access: {
+    admin: adminOnly,
+    create: adminOnly,
+    delete: adminOnly,
+    read: adminOnly,
+    update: adminOnly,
+  },
   admin: {
     defaultColumns: ['name', 'topic', 'updatedAt'],
     description:

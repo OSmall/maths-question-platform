@@ -146,7 +146,7 @@ Notes:
 
 ### Stage 5: Authentication, Roles, And Frontend Ownership
 
-Status: Pending
+Status: Completed
 
 - Lean on Payload authentication rather than adding a separate auth provider.
 - Keep the existing Payload `users` collection as the single auth collection.
@@ -183,16 +183,40 @@ Status: Pending
 - Add Playwright coverage for login flow behavior, including successful login, failed login, protected-route redirect, post-login redirect, and logout.
 - When implementing this stage, explore exact Payload/Next.js API details in the codebase and official docs; feel free to ask the user where product behavior is still ambiguous.
 
-Verification target:
+Behavior implemented:
 
-- `bun run generate:types`
-- `bun run migrate:create`
-- `bun run migrate`
-- `bun run lint`
-- `bun run typecheck`
-- `bun run test:unit`
-- `bun run build`
-- `bun run test:e2e`
+- Added shared auth helpers for current Payload user lookup, role checks, safe relative redirects, and protected route handling.
+- Added Payload access helpers for authenticated, admin-only, and owner-or-admin collection access.
+- Added optional multi-role `users.roles` values `admin` and `student`, saved to JWT.
+- Restricted Payload admin access to users with `admin`, while preserving first-user creation and forcing the first user to receive `admin`.
+- Restricted authoring collections to admin-only access: question, taxonomy, syllabus, syllabus coverage, and media management writes.
+- Made StudySession ownership required and owner-scoped for read/update/delete, with admin access available through Payload admin.
+- Added repository/service support for user-scoped StudySession Local API calls with `overrideAccess: false`.
+- Added frontend `/login` using Payload's `@payloadcms/next/auth` login helper and current-session logout using the logout helper.
+- Added unauthenticated `/question/**` redirect to `/login?redirect=...`, admin-only `/question/**` access, and safe post-login redirects.
+- Updated frontend navigation to show login when signed out, logout when signed in, and the admin link only for admin users.
+- Added login-flow Playwright coverage for failed login, successful login, protected-route redirect, post-login redirect, logout, and wrong-role not-found behavior.
+
+Generation and migration completed:
+
+- `bun run generate:types` passed.
+- `bun run migrate:create` created `src/migrations/20260512_150731.ts` and JSON snapshot.
+- Migration backfills existing users to `admin` and `student` and fails if any existing StudySession has no owner before enforcing non-null `user_id`.
+- `bun run migrate` passed.
+
+Verification completed:
+
+- `bun run lint` passed with existing warnings.
+- `bun run typecheck` passed.
+- `bun run test:unit` passed.
+- `bun run build` passed with existing warnings.
+- `bun run test:e2e` passed.
+- Playwright MCP inspection completed for `/login`, protected-route redirect to login, and failed-login feedback.
+
+Notes:
+
+- Context7 was used for Payload v3 auth/access and Next.js App Router redirect/protected-route documentation.
+- Browser inspection showed the existing missing `/favicon.ico` 404 console error; no new functional blocker was found.
 
 ### Stage 6: Server Actions
 

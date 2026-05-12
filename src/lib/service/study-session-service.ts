@@ -22,7 +22,7 @@ import {
 } from '@/lib/repository/study-session-repository'
 import { assertNever } from '@/lib/utils/types'
 import { parseToResult } from '@/lib/utils/validation'
-import type { StudySession as PayloadStudySession } from '@/payload/payload-types'
+import type { StudySession as PayloadStudySession, User } from '@/payload/payload-types'
 
 export type StudySessionAnswerSubmission =
   | {
@@ -43,10 +43,19 @@ export type StudySessionAnswerSubmission =
 
 type MutationOptions = {
   now?: Date
+  user?: User
 }
 
-export function getStudySessionQuestionByIndex(studySessionId: number, questionIndex: number) {
-  return fetchStudySessionByIdResult(studySessionId).andThen((payloadStudySession) => {
+type QueryOptions = {
+  user?: User
+}
+
+export function getStudySessionQuestionByIndex(
+  studySessionId: number,
+  questionIndex: number,
+  options: QueryOptions = {},
+) {
+  return fetchStudySessionForUser(studySessionId, options).andThen((payloadStudySession) => {
     const studySession = parsePayloadStudySession(payloadStudySession)
     const studySessionQuestion = studySession.questions[questionIndex]
 
@@ -107,7 +116,7 @@ export function submitStudySessionQuestionAnswers(
   const now = options.now ?? new Date()
   const nowIso = now.toISOString()
 
-  return fetchStudySessionByIdResult(studySessionId).andThen((payloadStudySession) => {
+  return fetchStudySessionForUser(studySessionId, options).andThen((payloadStudySession) => {
     const studySession = parsePayloadStudySession(payloadStudySession)
     const studySessionQuestion = studySession.questions[questionIndex]
 
@@ -138,12 +147,15 @@ export function submitStudySessionQuestionAnswers(
         })
         const isFinished = nextQuestions.every((question) => question.status === 'answered')
 
-        return updateStudySessionResult({
-          ...payloadStudySession,
-          state: isFinished ? 'finished' : 'started',
-          endedAt: isFinished ? nowIso : undefined,
-          questions: nextQuestions,
-        }).map((payloadStudySession) => parsePayloadStudySession(payloadStudySession))
+        return updateStudySessionForUser(
+          {
+            ...payloadStudySession,
+            state: isFinished ? 'finished' : 'started',
+            endedAt: isFinished ? nowIso : undefined,
+            questions: nextQuestions,
+          },
+          options,
+        ).map((payloadStudySession) => parsePayloadStudySession(payloadStudySession))
       },
     )
   })
@@ -157,7 +169,7 @@ export function skipStudySessionQuestion(
   const now = options.now ?? new Date()
   const nowIso = now.toISOString()
 
-  return fetchStudySessionByIdResult(studySessionId).andThen((payloadStudySession) => {
+  return fetchStudySessionForUser(studySessionId, options).andThen((payloadStudySession) => {
     const studySession = parsePayloadStudySession(payloadStudySession)
     const studySessionQuestion = studySession.questions[questionIndex]
 
@@ -187,12 +199,15 @@ export function skipStudySessionQuestion(
           }
         })
 
-        return updateStudySessionResult({
-          ...payloadStudySession,
-          state: 'started',
-          endedAt: undefined,
-          questions: nextQuestions,
-        }).map((payloadStudySession) => parsePayloadStudySession(payloadStudySession))
+        return updateStudySessionForUser(
+          {
+            ...payloadStudySession,
+            state: 'started',
+            endedAt: undefined,
+            questions: nextQuestions,
+          },
+          options,
+        ).map((payloadStudySession) => parsePayloadStudySession(payloadStudySession))
       },
     )
   })
@@ -202,21 +217,42 @@ export function setStudySessionQuestionFlagged(
   studySessionId: number,
   questionIndex: number,
   flagged: boolean,
+  options: QueryOptions = {},
 ) {
-  return fetchStudySessionByIdResult(studySessionId).andThen((payloadStudySession) => {
+  return fetchStudySessionForUser(studySessionId, options).andThen((payloadStudySession) => {
     const studySession = parsePayloadStudySession(payloadStudySession)
 
     if (!studySession.questions[questionIndex]) {
       return err(new StudySessionQuestionIndexError(studySessionId, questionIndex))
     }
 
-    return updateStudySessionResult({
-      ...payloadStudySession,
-      questions: payloadStudySession.questions.map((question, index) =>
-        index === questionIndex ? { ...question, flagged } : question,
-      ),
-    }).map((payloadStudySession) => parsePayloadStudySession(payloadStudySession).questions[questionIndex])
+    return updateStudySessionForUser(
+      {
+        ...payloadStudySession,
+        questions: payloadStudySession.questions.map((question, index) =>
+          index === questionIndex ? { ...question, flagged } : question,
+        ),
+      },
+      options,
+    ).map(
+      (payloadStudySession) => parsePayloadStudySession(payloadStudySession).questions[questionIndex],
+    )
   })
+}
+
+function fetchStudySessionForUser(studySessionId: number, options: QueryOptions | MutationOptions) {
+  return options.user
+    ? fetchStudySessionByIdResult(studySessionId, { user: options.user })
+    : fetchStudySessionByIdResult(studySessionId)
+}
+
+function updateStudySessionForUser(
+  studySession: PayloadStudySessionForService,
+  options: QueryOptions | MutationOptions,
+) {
+  return options.user
+    ? updateStudySessionResult(studySession, { user: options.user })
+    : updateStudySessionResult(studySession)
 }
 
 function parsePayloadStudySession(payloadStudySession: PayloadStudySessionForService): StudySession {

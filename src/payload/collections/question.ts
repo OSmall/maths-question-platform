@@ -1,6 +1,8 @@
 import { hasText } from '@payloadcms/richtext-lexical/shared'
 import type { CollectionConfig, Field, Validate } from 'payload'
 
+import { adminOnly } from '@/payload/access'
+
 type MultipleChoiceChoice = {
   isCorrect?: boolean | null
   text?: string | null
@@ -203,6 +205,14 @@ const responseField = {
 
 export const Question: CollectionConfig = {
   slug: 'question',
+  access: {
+    admin: adminOnly,
+    create: adminOnly,
+    delete: adminOnly,
+    read: adminOnly,
+    readVersions: adminOnly,
+    update: adminOnly,
+  },
   admin: {
     livePreview: {
       url: ({ data }) =>
