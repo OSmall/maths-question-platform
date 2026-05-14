@@ -14,8 +14,10 @@ This plan implements GitHub issue #14: persisted StudySessions with locked quest
 - StudySession route never uses draft mode.
 - `/question/[id]` remains the live-preview route, but shares StudySession-like UI.
 - Remove the Save button globally.
-- Preview Flag is local-only; StudySession Flag is persisted with SWR optimistic updates.
+- Preview Flag is URL-backed and uses SWR optimistic updates with Next router `replace`; StudySession Flag is persisted with SWR optimistic updates.
 - Submit and Skip use server actions. Continue is navigation/no-op on the last question.
+- StudySession question URLs are one-based for users; service/domain question indexes remain zero-based.
+- Keep `notStarted` future-modeled but unsupported in the current route; if an owned session is `notStarted`, return a service business error and show a simple route-level message.
 - Timer is a tiny client island ticking every second.
 - Add Payload-backed frontend authentication before StudySession server actions/routes.
 - Use one Payload `users` collection with optional multi-role values: `admin` and `student`.
@@ -241,13 +243,23 @@ Verification target:
 Status: Pending
 
 - Refactor shared question components so both routes use the same UI.
+- Keep the shared renderer as a Server Component where possible.
+- Inject route-specific behavior into the renderer rather than importing preview or StudySession actions inside shared UI.
+- Use tiny client islands only for interactive concerns: submit/skip action state, flag mutation, and timer.
+- Submit and Skip action business errors should be displayed with `toast.error(...)`, not inline form messages.
 - Remove Save globally.
 - Make answer inputs required globally.
+- Use native HTML required validation for all answer types where possible, with service business errors as the fallback.
+- In review mode, keep answer controls disabled; persisted or URL-backed state is the source of truth and hidden replay values are not needed.
+- Use one question-level Flag control, not repeated per-part flag controls.
 - Use `shuffleKeyBase` for deterministic MCQ ordering.
 - Inject route-specific submit, skip, continue, and flag behavior.
+- Use indexed FormData rows for submit payloads: `answers.0.partId`, `answers.0.type`, and `answers.0.value`.
+- Continue should be a Next `<Link>` when a next question exists, to keep it as pure navigation and remain compatible with future route prefetching.
 - Add tiny timer client island.
+- Timer displays session elapsed time: `begunAt` to now for started sessions, and `begunAt` to `endedAt` for finished sessions.
 - Add flag mode adapters:
-- Preview: local-only optimistic state.
+- Preview: URL-backed SWR optimistic mutation using Next router `replace`.
 - StudySession: persisted SWR optimistic mutation.
 
 Verification target:
@@ -262,12 +274,18 @@ Verification target:
 Status: Pending
 
 - Add `/study-session/[studySessionId]/question/[questionIndex]/page.tsx`.
-- Parse numeric params; invalid params and out-of-range index call `notFound()`.
-- Render only `started` and `finished` sessions; `notStarted` is a hard unsupported-state error for now.
+- Treat `questionIndex` in the URL as a one-based question number; convert to zero-based before calling services.
+- Parse numeric params; invalid zero/negative/non-numeric params call `notFound()` before service access.
+- Map out-of-range question index service errors to `notFound()`.
+- Render `started` and `finished` sessions.
+- If an owned session is `notStarted`, render a simple route-level unsupported message from the service business error; do not add a Start button in this stage.
 - Never use draft mode.
 - Build `shuffleKeyBase` from `studySessionId`, `questionIndex`, and canonical question ID.
 - Freeze timer when finished.
 - Lock answers and Skip after answered; keep Flag available.
+- Finished sessions remain viewable in review mode; do not redirect to a summary route in this stage.
+- Skipped questions are editable when revisited, and Skip remains available on skipped questions.
+- Load only the current question's flag state for now; keep decisions compatible with future Next route prefetching or a session navigator.
 
 Verification target:
 
@@ -284,12 +302,17 @@ Status: Pending
 - Replace `seed` with `previewStudySessionId`.
 - Redirect `/question/[id]` to add `previewStudySessionId` when missing.
 - Preserve `previewStudySessionId` through submitted review URLs.
+- Use `previewStudySessionId` in both the URL and form/action payload; derive `shuffleKeyBase` internally.
+- Keep preview state URL-backed: `previewStudySessionId`, optional `submitted=1`, optional `flagged=1`, and `a.<partId>=...` answer params.
+- Keep preview answers in the URL so refresh/share preserves review state.
+- Preview flag is URL-backed, not local-only; update it with Next router `replace` to avoid browser history spam.
 - Use synthetic preview session state:
 - Before submit: `started`.
 - After submit: `finished`.
 - Preview question index is internal `0`.
-- Preview flag is local-only.
+- Preview flag is URL-backed but fed into the shared renderer with the same prop shape as the persisted StudySession flag.
 - Preview skip/continue are no-op for visual parity.
+- Preview Continue is disabled/no-op because preview has only internal question index `0`.
 
 Verification target:
 
@@ -307,9 +330,12 @@ Status: Pending
 - Add shadcn `sonner` with `bunx shadcn@latest add @shadcn/sonner`.
 - Add `Toaster` to frontend layout.
 - Implement SWR flag cache for only `{ flagged }`.
-- Use optimistic update, rollback on error, and populate canonical server result.
+- Use SWR for both preview and StudySession flag controls with the same `{ flagged }` cache shape.
+- Preview SWR mutation does not call an endpoint; it updates the URL with Next router `replace` and uses `revalidate: false`.
+- StudySession SWR mutation calls the persisted flag server action and populates the canonical server result.
+- Use optimistic update, rollback on error, and populate canonical result.
 - Coalesce rapid clicks with last-write-wins semantics: one in-flight request and one follow-up if desired state changed.
-- Show `toast.error(...)` on flag persistence failure.
+- Show `toast.error(...)` on flag failure and roll back to the last confirmed value.
 
 Verification target:
 
