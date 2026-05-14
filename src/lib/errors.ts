@@ -74,6 +74,16 @@ export class StudySessionQuestionAlreadyAnsweredError extends AppError {
   }
 }
 
+export class StudySessionQuestionIncompleteAnswerError extends AppError {
+  static ERROR_NAME = 'STUDY_SESSION_QUESTION_INCOMPLETE_ANSWER_ERROR'
+  constructor(studySessionId: number, questionIndex: number, partIds: readonly string[], options: ErrorOptions = {}) {
+    super(
+      `Question ${questionIndex} in study session ${studySessionId} is missing required answers for parts: ${partIds.join(', ')}`,
+      options,
+    )
+  }
+}
+
 export class StudySessionUnsupportedStateError extends AppError {
   static ERROR_NAME = 'STUDY_SESSION_UNSUPPORTED_STATE_ERROR'
   constructor(studySessionId: number, state: string, options: ErrorOptions = {}) {

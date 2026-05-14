@@ -222,7 +222,7 @@ Notes:
 
 ### Stage 6: Server Actions
 
-Status: Pending
+Status: Completed
 
 - Add StudySession actions with `next-safe-action`.
 - Submit action validates required answers and redirects back to review.
@@ -230,6 +230,26 @@ Status: Pending
 - Flag action sets absolute `{ flagged }` and returns typed success/error data.
 - Keep submit tamper errors as hard failures.
 - Keep Continue as navigation/no-op, not a mutation.
+
+Behavior implemented:
+
+- Added `src/app/actions/study-session-actions.ts` with submit, skip, and absolute flag server actions.
+- Added `src/app/actions/study-session-action-utils.ts` for one-based StudySession question paths, one-based-to-zero-based index conversion, and indexed FormData parsing.
+- StudySession actions require `student` role before calling user-scoped service operations.
+- Submit action parses indexed answer rows: `answers.0.partId`, `answers.0.type`, and `answers.0.value`.
+- Submit success redirects back to the same StudySession question path for review.
+- Skip success redirects to the next one-based question path, or stays on the last question.
+- Flag action returns only `{ flagged }` on success.
+- Expected submit/skip business errors return typed action data; not-found and out-of-range cases map to `notFound()`.
+- Added `StudySessionQuestionIncompleteAnswerError` so missing or blank required answers are returned as `neverthrow` business errors.
+- Kept malformed/tampered answer payloads, such as duplicate parts, wrong answer types, unknown parts, and invalid choices, as hard errors.
+
+Verification completed:
+
+- `bun run lint` passed with existing warnings.
+- `bun run typecheck` passed.
+- `bun run test:unit` passed.
+- `bun run build` passed with existing warnings.
 
 Verification target:
 

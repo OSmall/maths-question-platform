@@ -1,4 +1,4 @@
-import { err } from 'neverthrow'
+import { err, ok, type Result } from 'neverthrow'
 
 import {
   buildStudySessionQuestionSubmissionEvaluationCandidate,
@@ -10,6 +10,7 @@ import { studySessionSchema, type StudySession } from '@/lib/domain/study-sessio
 import {
   QuestionNotRenderableError,
   StudySessionQuestionAlreadyAnsweredError,
+  StudySessionQuestionIncompleteAnswerError,
   StudySessionQuestionIndexError,
   StudySessionUnsupportedStateError,
 } from '@/lib/errors'
@@ -132,6 +133,17 @@ export function submitStudySessionQuestionAnswers(
       (payloadQuestionVersion) => {
         assertLockedQuestionVersionMatchesSessionQuestion(payloadQuestionVersion, studySessionQuestion)
 
+        const payloadAnswersResult = buildPayloadAnswersFromSubmission(
+          studySessionId,
+          questionIndex,
+          payloadQuestionVersion,
+          answers,
+        )
+
+        if (payloadAnswersResult.isErr()) {
+          return err(payloadAnswersResult.error)
+        }
+
         const nextQuestions = payloadStudySession.questions.map((question, index) => {
           if (index !== questionIndex) {
             return question
@@ -142,7 +154,7 @@ export function submitStudySessionQuestionAnswers(
             status: 'answered' as const,
             answeredAt: nowIso,
             skippedAt: undefined,
-            answers: buildPayloadAnswersFromSubmission(payloadQuestionVersion, answers),
+            answers: payloadAnswersResult.value,
           }
         })
         const isFinished = nextQuestions.every((question) => question.status === 'answered')
@@ -270,10 +282,13 @@ function parsePayloadStudySession(payloadStudySession: PayloadStudySessionForSer
 }
 
 function buildPayloadAnswersFromSubmission(
+  studySessionId: number,
+  questionIndex: number,
   payloadQuestionVersion: PayloadLockedQuestionVersionForService,
   answers: readonly StudySessionAnswerSubmission[],
-): PayloadStudySession['questions'][number]['answers'] {
+): Result<PayloadStudySession['questions'][number]['answers'], StudySessionQuestionIncompleteAnswerError> {
   const submittedAnswersByPartId = new Map<string, StudySessionAnswerSubmission>()
+  const incompletePartIds: string[] = []
 
   answers.forEach((answer) => {
     if (submittedAnswersByPartId.has(answer.partId)) {
@@ -289,7 +304,8 @@ function buildPayloadAnswersFromSubmission(
 
     const answer = submittedAnswersByPartId.get(part.id)
     if (!answer) {
-      throw new Error(`Submitted answers are missing required part ${part.id}.`)
+      incompletePartIds.push(part.id)
+      return undefined
     }
 
     submittedAnswersByPartId.delete(part.id)
@@ -298,7 +314,13 @@ function buildPayloadAnswersFromSubmission(
       throw new Error(`Submitted answer for part ${part.id} has type ${answer.type}; expected ${part.response.type}.`)
     }
 
-    return buildPayloadAnswer(part.id, answer, part)
+    const payloadAnswer = buildPayloadAnswer(part.id, answer, part)
+
+    if (payloadAnswer === undefined) {
+      incompletePartIds.push(part.id)
+    }
+
+    return payloadAnswer
   })
 
   if (submittedAnswersByPartId.size > 0) {
@@ -307,14 +329,18 @@ function buildPayloadAnswersFromSubmission(
     )
   }
 
-  return payloadAnswers
+  if (incompletePartIds.length > 0) {
+    return err(new StudySessionQuestionIncompleteAnswerError(studySessionId, questionIndex, incompletePartIds))
+  }
+
+  return ok(payloadAnswers.filter((answer) => answer !== undefined))
 }
 
 function buildPayloadAnswer(
   partId: string,
   answer: StudySessionAnswerSubmission,
   part: PayloadLockedQuestionVersionForService['version']['parts'][number],
-): PayloadStudySession['questions'][number]['answers'][number] {
+): PayloadStudySession['questions'][number]['answers'][number] | undefined {
   switch (answer.type) {
     case 'multipleChoice': {
       const choiceIds = new Set((part.response.multipleChoice?.choices ?? []).map((choice) => choice.id))
@@ -331,8 +357,8 @@ function buildPayloadAnswer(
       }
     }
     case 'shortText':
-      if (answer.answer.length === 0) {
-        throw new Error(`Submitted answer for part ${partId} is empty.`)
+      if (answer.answer.trim().length === 0) {
+        return undefined
       }
 
       return {

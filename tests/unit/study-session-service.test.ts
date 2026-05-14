@@ -2,7 +2,11 @@ import { afterEach, describe, expect, it, mock, vi } from 'bun:test'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import { ResultAsync } from 'neverthrow'
 
-import { StudySessionQuestionAlreadyAnsweredError, StudySessionQuestionIndexError } from '@/lib/errors'
+import {
+  StudySessionQuestionAlreadyAnsweredError,
+  StudySessionQuestionIncompleteAnswerError,
+  StudySessionQuestionIndexError,
+} from '@/lib/errors'
 import type {
   PayloadLockedQuestionVersionForService,
   PayloadStudySessionForService,
@@ -203,6 +207,32 @@ describe('study session service', () => {
     }
     expect(result.error).toBeInstanceOf(StudySessionQuestionAlreadyAnsweredError)
   })
+
+  it('returns a business error when required answers are missing', async () => {
+    const result = await submitStudySessionQuestionAnswers(123, 0, [])
+
+    expect(result.isErr()).toBe(true)
+    if (result.isOk()) {
+      throw new Error('Expected an error result')
+    }
+    expect(result.error).toBeInstanceOf(StudySessionQuestionIncompleteAnswerError)
+  })
+
+  it('returns a business error when a short text answer is blank', async () => {
+    fetchLockedQuestionVersionByIdResult.mockImplementationOnce((id: string) =>
+      ResultAsync.fromPromise(Promise.resolve(createPayloadQuestionVersion(id, 'shortText')), (error) => error as Error),
+    )
+
+    const result = await submitStudySessionQuestionAnswers(123, 0, [
+      { partId: 'part-1', type: 'shortText', answer: '   ' },
+    ])
+
+    expect(result.isErr()).toBe(true)
+    if (result.isOk()) {
+      throw new Error('Expected an error result')
+    }
+    expect(result.error).toBeInstanceOf(StudySessionQuestionIncompleteAnswerError)
+  })
 })
 
 const nonEmptyRichText = {
@@ -258,7 +288,10 @@ function createPayloadStudySessionQuestion(questionId: number): PayloadStudySess
   }
 }
 
-function createPayloadQuestionVersion(id: string): PayloadLockedQuestionVersionForService {
+function createPayloadQuestionVersion(
+  id: string,
+  responseType: 'multipleChoice' | 'shortText' = 'multipleChoice',
+): PayloadLockedQuestionVersionForService {
   const questionId = Number(id.replace('version-', ''))
 
   return {
@@ -275,16 +308,24 @@ function createPayloadQuestionVersion(id: string): PayloadLockedQuestionVersionF
         {
           id: 'part-1',
           prompt: undefined,
-          response: {
-            type: 'multipleChoice',
-            multipleChoice: {
-              choices: [
-                { id: 'choice-a', text: 'Option A', isCorrect: true },
-                { id: 'choice-b', text: 'Option B', isCorrect: false },
-              ],
-              shuffle: true,
-            },
-          },
+          response:
+            responseType === 'shortText'
+              ? {
+                  type: 'shortText',
+                  shortText: {
+                    acceptedAnswers: [{ id: 'accepted-1', value: '42' }],
+                  },
+                }
+              : {
+                  type: 'multipleChoice',
+                  multipleChoice: {
+                    choices: [
+                      { id: 'choice-a', text: 'Option A', isCorrect: true },
+                      { id: 'choice-b', text: 'Option B', isCorrect: false },
+                    ],
+                    shuffle: true,
+                  },
+                },
           workedSolutions: [],
         },
       ],
