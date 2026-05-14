@@ -1,13 +1,9 @@
 import { expect, test as base } from '@playwright/test'
 
-const baseURL = process.env.PLAYWRIGHT_BASE_URL
-
-if (!baseURL) {
-  throw new Error('PLAYWRIGHT_BASE_URL was not captured from the Playwright webServer output.')
-}
+import { e2eEnv } from './e2e-env'
 
 base.use({
-  baseURL,
+  baseURL: e2eEnv.PLAYWRIGHT_BASE_URL,
 })
 
 export { expect, base as test }

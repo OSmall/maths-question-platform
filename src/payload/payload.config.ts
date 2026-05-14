@@ -14,6 +14,7 @@ import { SyllabusSubTopic } from '@/payload/collections/syllabus-sub-topic'
 import { StudySession } from '@/payload/collections/study-session'
 import { Topic } from '@/payload/collections/topic'
 import { SubTopic } from '@/payload/collections/sub-topic'
+import { env } from '@/env'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -27,20 +28,20 @@ export default buildConfig({
   },
   collections: [Users, Media, Topic, SubTopic, Syllabus, SyllabusSubTopic, Question, StudySession],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: env.PAYLOAD_SECRET,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: vercelPostgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: env.DATABASE_URL,
     },
     push: false,
   }),
   sharp,
   plugins: [
     vercelBlobStorage({
-      token: process.env.BLOB_READ_WRITE_TOKEN || '',
+      token: env.BLOB_READ_WRITE_TOKEN,
       collections: {
         media: true,
       },

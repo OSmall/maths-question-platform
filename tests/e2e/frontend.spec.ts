@@ -10,7 +10,6 @@ const password = 'Payload-e2e-password-14'
 test.beforeAll(async () => {
   const { config: loadEnv } = await import('dotenv')
   loadEnv({ path: '.env.local' })
-  process.env.PAYLOAD_SECRET ||= 'e2e-secret-for-payload-local-api'
 
   const { default: config } = await import('@payload-config')
   const payload = await getPayload({ config })
@@ -55,7 +54,7 @@ test.describe('Frontend', () => {
   test('can go on homepage', async ({ page }) => {
     await page.goto('/')
 
-    expect(page.url().startsWith(process.env.PLAYWRIGHT_BASE_URL ?? '')).toBe(true)
+    expect(page.url().startsWith(test.info().project.use.baseURL ?? '')).toBe(true)
     await expect(page).toHaveTitle(/Payload Blank Template/)
 
     const heading = page.locator('h1').first()
