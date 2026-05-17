@@ -10,9 +10,12 @@ describe('question action utils', () => {
     const formData = new FormData()
     formData.set('questionId', '12')
     formData.set('seed', 'seed-123')
-    formData.set('a.part-1', 'choice-a')
-    formData.set('a.part-2', '  x = 4  ')
-    formData.set('a.part-3', '   ')
+    formData.set('answers.1.partId', 'part-2')
+    formData.set('answers.1.type', 'shortText')
+    formData.set('answers.1.value', '  x = 4  ')
+    formData.set('answers.0.partId', 'part-1')
+    formData.set('answers.0.type', 'multipleChoice')
+    formData.set('answers.0.value', 'choice-a')
     formData.set('ignored', 'value')
 
     expect(parseSubmittedQuestionFormData(formData)).toEqual({

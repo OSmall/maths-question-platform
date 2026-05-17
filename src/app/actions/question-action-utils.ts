@@ -1,34 +1,28 @@
 import { z } from 'zod'
 
+const answerRowFieldPattern = /^answers\.(\d+)\.(partId|type|value)$/
+
+const answerRowSchema = z.object({
+  partId: z.string().min(1),
+  type: z.union([z.literal('multipleChoice'), z.literal('shortText'), z.literal('selfReport')]),
+  value: z.string().min(1),
+})
+
 const submittedQuestionPayloadSchema = z.object({
-  answers: z.record(z.string(), z.string()),
+  rows: z.array(answerRowSchema),
   questionId: z.number().int().positive(),
   seed: z.string().min(1),
-})
+}).transform(({ rows, ...payload }) => ({
+  ...payload,
+  answers: Object.fromEntries(rows.map((row) => [row.partId, row.value])),
+}))
 
 export const submittedQuestionFormSchema = z
   .instanceof(FormData)
   .transform((formData) => {
-    const answers: Record<string, string> = {}
-
-    for (const [key, value] of formData.entries()) {
-      if (!key.startsWith('a.') || typeof value !== 'string') {
-        continue
-      }
-
-      const partId = key.slice(2)
-      const trimmedValue = value.trim()
-
-      if (!partId || trimmedValue.length === 0) {
-        continue
-      }
-
-      answers[partId] = value
-    }
-
     return {
-      answers,
       questionId: Number(formData.get('questionId')),
+      rows: parseAnswerRows(formData),
       seed: String(formData.get('seed') ?? ''),
     }
   })
@@ -53,4 +47,29 @@ export function buildQuestionReviewPath(
   }
 
   return `/question/${questionId}?${searchParams.toString()}`
+}
+
+function parseAnswerRows(formData: FormData) {
+  const rowsByIndex = new Map<number, Record<string, string>>()
+
+  for (const [key, value] of formData.entries()) {
+    if (typeof value !== 'string') {
+      continue
+    }
+
+    const match = answerRowFieldPattern.exec(key)
+    if (!match) {
+      continue
+    }
+
+    const [, rawIndex, field] = match
+    const index = Number(rawIndex)
+    const row = rowsByIndex.get(index) ?? {}
+    row[field] = value
+    rowsByIndex.set(index, row)
+  }
+
+  return Array.from(rowsByIndex.entries())
+    .sort(([leftIndex], [rightIndex]) => leftIndex - rightIndex)
+    .map(([, row]) => row)
 }

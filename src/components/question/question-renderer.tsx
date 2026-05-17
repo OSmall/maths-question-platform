@@ -1,11 +1,12 @@
-import { submitQuestionAnswersFormAction } from '@/app/actions/question-actions'
+import type { ReactNode } from 'react'
+
 import { QuestionActionBar } from '@/components/question/question-action-bar'
+import { QuestionActionForm } from '@/components/question/question-action-form'
 import { QuestionAnswerField } from '@/components/question/question-answer-field'
 import { QuestionHeader } from '@/components/question/question-header'
 import { answerTypeLabel } from '@/components/question/question-utils'
 import { QuestionReviewPanel } from '@/components/question/question-review-panel'
 import { QuestionSessionSummary } from '@/components/question/question-session-summary'
-import { QuestionToggleButton } from '@/components/question/question-toggle-button'
 import { RichTextRenderer } from '@/components/rich-text/rich-text-renderer'
 import { Badge } from '@/components/ui/badge'
 import type {
@@ -13,21 +14,50 @@ import type {
   RenderableQuestionSubmissionEvaluation,
 } from '@/lib/domain/question'
 
+type QuestionRouteField = {
+  name: string
+  value: number | string
+}
+
 type QuestionRendererProps = {
+  skipAction?: (formData: FormData) => Promise<{
+    data?: { message?: string; status?: string }
+    serverError?: string
+  } | void>
+  submitAction: (formData: FormData) => Promise<{
+    data?: { message?: string; status?: string }
+    serverError?: string
+  } | void>
+  flagControl?: ReactNode
   isDraftMode: boolean
   question: RenderableQuestion
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
+  routeFields?: QuestionRouteField[]
+  timer?: {
+    begunAt?: string
+    endedAt?: string
+  }
 }
 
 export const QuestionRenderer = ({
+  flagControl,
   isDraftMode,
   question,
   questionSubmissionEvaluation,
+  routeFields = [],
+  skipAction,
+  submitAction,
+  timer,
 }: QuestionRendererProps) => {
   return (
-    <form action={submitQuestionAnswersFormAction} className="mx-auto w-full max-w-310">
-      <input name="questionId" type="hidden" value={question.id} />
-      <input name="seed" type="hidden" value={question.shuffleKeyBase} />
+    <QuestionActionForm
+      className="mx-auto w-full max-w-310"
+      skipAction={skipAction}
+      submitAction={submitAction}
+    >
+      {routeFields.map((field) => (
+        <input key={field.name} name={field.name} type="hidden" value={field.value} />
+      ))}
 
       <div className="flex flex-col gap-4 lg:gap-6">
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
@@ -35,6 +65,7 @@ export const QuestionRenderer = ({
             isDraftMode={isDraftMode}
             question={question}
             questionSubmissionEvaluation={questionSubmissionEvaluation}
+            timer={timer}
           />
 
           <div className="min-w-0 space-y-4 lg:space-y-5">
@@ -78,13 +109,6 @@ export const QuestionRenderer = ({
                             )}
                           </div>
 
-                          <QuestionToggleButton
-                            activeClassName="border-primary/25 bg-primary/10 text-foreground hover:bg-primary/15"
-                            activeLabel="Flagged"
-                            className="shrink-0"
-                            icon="flag"
-                            inactiveLabel="Flag"
-                          />
                         </div>
 
                         <div className="rounded-[1.6rem] border border-border/70 bg-background/75 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.45)] sm:p-4 dark:bg-background/35 dark:shadow-none">
@@ -110,6 +134,7 @@ export const QuestionRenderer = ({
                             </div>
 
                             <QuestionAnswerField
+                              fieldIndex={index}
                               questionPart={part}
                               questionSubmissionEvaluation={questionSubmissionEvaluation}
                               shuffleKeyBase={question.shuffleKeyBase}
@@ -137,12 +162,13 @@ export const QuestionRenderer = ({
             </article>
 
             <QuestionActionBar
+              flagControl={flagControl}
               question={question}
               questionSubmissionEvaluation={questionSubmissionEvaluation}
             />
           </div>
         </div>
       </div>
-    </form>
+    </QuestionActionForm>
   )
 }

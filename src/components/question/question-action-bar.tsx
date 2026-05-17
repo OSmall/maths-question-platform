@@ -1,17 +1,34 @@
 import { ArrowRight, SkipForward } from 'lucide-react'
+import Link from 'next/link'
 
 import { RenderableQuestion, RenderableQuestionSubmissionEvaluation } from '@/lib/domain/question'
 import { QuestionSubmitButton } from './question-submit-button'
-import { QuestionToggleButton } from './question-toggle-button'
+import { Button } from '@/components/ui/button'
+
+type QuestionControlConfig = {
+  disabled?: boolean
+}
+
+type QuestionContinueConfig = QuestionControlConfig & {
+  href?: string
+}
 
 type QuestionActionBarProps = {
+  flagControl?: React.ReactNode
   question: RenderableQuestion
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
+  controls?: {
+    continue?: QuestionContinueConfig
+    skip?: QuestionControlConfig
+    submit?: QuestionControlConfig
+  }
 }
 
 export const QuestionActionBar = ({
+  flagControl,
   question,
   questionSubmissionEvaluation,
+  controls,
 }: QuestionActionBarProps) => {
   const isSubmitted = questionSubmissionEvaluation.isEvaluated
   return (
@@ -34,37 +51,47 @@ export const QuestionActionBar = ({
 
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            <button
-              className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-border bg-input/30 px-3 text-sm font-medium text-foreground transition-all hover:bg-input/50"
-              type="button"
+            <Button
+              disabled={controls?.skip?.disabled}
+              formNoValidate
+              name="intent"
+              type="submit"
+              value="skip"
+              variant="outline"
             >
-              <SkipForward className="size-4" />
+              <SkipForward data-icon="inline-start" />
               Skip
-            </button>
-            <QuestionToggleButton
-              activeClassName="border-primary/35 bg-primary/10 text-foreground hover:bg-primary/15"
-              activeLabel="Saved"
-              icon="bookmark"
-              inactiveLabel="Save"
-              inactiveClassName="border-border bg-input/30 text-foreground hover:bg-input/50"
-            />
+            </Button>
+            {flagControl}
           </div>
 
           <div className="flex flex-wrap justify-end gap-2">
             {isSubmitted ? (
-              <button
-                className="inline-flex h-10 items-center justify-center gap-1.5 rounded-full border border-transparent bg-primary px-5 text-sm font-medium text-primary-foreground transition-all hover:bg-primary/80"
-                type="button"
-              >
-                <ArrowRight className="size-4" />
-                Continue
-              </button>
+              <ContinueControl config={controls?.continue} />
             ) : (
-              <QuestionSubmitButton />
+              <QuestionSubmitButton disabled={controls?.submit?.disabled} />
             )}
           </div>
         </div>
       </div>
     </div>
+  )
+}
+
+function ContinueControl({ config }: { config?: QuestionContinueConfig }) {
+  if (config?.href && !config.disabled) {
+    return (
+      <Button render={<Link href={config.href} />}>
+        <ArrowRight data-icon="inline-start" />
+        Continue
+      </Button>
+    )
+  }
+
+  return (
+    <Button disabled type="button">
+      <ArrowRight data-icon="inline-start" />
+      Continue
+    </Button>
   )
 }

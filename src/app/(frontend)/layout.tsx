@@ -11,6 +11,7 @@ import {
 import { ThemeProvider } from '@/components/theme/theme-provider'
 import { AuthNav } from '@/components/auth/auth-nav'
 import { getCurrentPayloadUser } from '@/lib/auth/current-user'
+import { Toaster } from '@/components/ui/sonner'
 
 export const metadata = {
   description: 'A blank template using Payload in a Next.js app.',
@@ -47,6 +48,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
             </nav>
           </header>
           <main>{children}</main>
+          <Toaster />
         </ThemeProvider>
       </body>
     </html>

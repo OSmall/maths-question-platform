@@ -260,7 +260,7 @@ Verification target:
 
 ### Stage 7: Shared Question UI Refactor
 
-Status: Pending
+Status: Completed
 
 - Refactor shared question components so both routes use the same UI.
 - Keep the shared renderer as a Server Component where possible.
@@ -281,6 +281,28 @@ Status: Pending
 - Add flag mode adapters:
 - Preview: URL-backed SWR optimistic mutation using Next router `replace`.
 - StudySession: persisted SWR optimistic mutation.
+
+Behavior implemented:
+
+- Added minimal `swr` and shadcn `sonner` setup, including the frontend `Toaster`.
+- Refactored `QuestionRenderer` so shared UI owns the visual layout/control markup while routes inject submit/skip actions, hidden route identity fields, flag control, and timer data.
+- Added a tiny client form shell that executes injected server actions, preserves native required validation for submit, bypasses it for skip, and displays action business/server errors with `toast.error(...)`.
+- Removed route-action imports from the shared renderer.
+- Removed per-part flag controls and replaced the Save action area with one question-level flag control in the sticky action bar.
+- Added a URL-backed preview flag adapter using SWR optimistic cache updates and Next router `replace` with `flagged=1`.
+- Changed shared answer inputs to indexed FormData rows: `answers.N.partId`, `answers.N.type`, and `answers.N.value`.
+- Added native `required` validation to editable multiple-choice, short-text, and self-report answer inputs.
+- Kept review-mode answer controls disabled without hidden replay values.
+- Updated the existing `/question/[id]` preview route to use the refactored shared renderer while preserving the current preview URL contract: `seed`, `submitted=1`, and `a.<partId>=...`.
+- Updated preview submit parsing to translate indexed answer rows back into existing preview answer URL params until Stage 9.
+- Added a tiny timer client island; preview uses synthetic timing until StudySession routes pass persisted timestamps.
+
+Verification completed:
+
+- `bun run lint` passed with existing warnings.
+- `bun run typecheck` passed.
+- `bun run test:unit` passed.
+- `bun run build` passed with existing warnings.
 
 Verification target:
 

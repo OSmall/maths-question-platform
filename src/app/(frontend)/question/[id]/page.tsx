@@ -1,4 +1,6 @@
 import { RefreshRouteOnSave } from '@/components/live-preview/refresh-route-on-save'
+import { submitQuestionAnswersAction } from '@/app/actions/question-actions'
+import { PreviewQuestionFlagButton } from '@/components/question/question-flag-button'
 import { QuestionPreviewWarning } from '@/components/question/question-preview-warning'
 import { QuestionRenderer } from '@/components/question/question-renderer'
 import { QuestionNotRenderableError } from '@/lib/errors'
@@ -37,6 +39,8 @@ export default async function QuestionPage({
   await requireRole(buildQuestionPath(id, resolvedSearchParams), USER_ROLES.admin)
 
   const seed = getSingleSearchParam(resolvedSearchParams.seed)
+  const isFlagged = getSingleSearchParam(resolvedSearchParams.flagged) === '1'
+  const isSubmitted = getSingleSearchParam(resolvedSearchParams.submitted) === '1'
   if (!seed) {
     const seededSearchParams = new URLSearchParams()
 
@@ -65,9 +69,16 @@ export default async function QuestionPage({
         {isDraftMode && <RefreshRouteOnSave />}
         <div className="mx-auto flex w-full justify-center">
           <QuestionRenderer
+            flagControl={<PreviewQuestionFlagButton initialFlagged={isFlagged} />}
             isDraftMode={isDraftMode}
             question={question}
             questionSubmissionEvaluation={questionSubmissionEvaluation}
+            routeFields={[
+              { name: 'questionId', value: question.id },
+              { name: 'seed', value: question.shuffleKeyBase },
+            ]}
+            submitAction={submitQuestionAnswersAction}
+            timer={{ begunAt: isSubmitted ? undefined : new Date().toISOString() }}
           />
         </div>
       </div>
