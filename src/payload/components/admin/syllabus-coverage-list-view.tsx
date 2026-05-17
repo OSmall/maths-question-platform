@@ -19,14 +19,14 @@ export async function SyllabusCoverageListView(props: ListViewServerProps) {
 
   const [syllabusesResult, subTopicsResult, coverageResult] = await Promise.all([
     props.payload.find({
-      collection: 'syllabus' as never,
+      collection: 'syllabus',
       depth: 0,
       limit: 1000,
       pagination: false,
       select: {
         id: true,
         name: true,
-      } as never,
+      },
     }),
     props.payload.find({
       collection: 'subTopic',
@@ -41,7 +41,7 @@ export async function SyllabusCoverageListView(props: ListViewServerProps) {
       },
     }),
     props.payload.find({
-      collection: 'syllabusSubTopic' as never,
+      collection: 'syllabusSubTopic',
       depth: 0,
       limit: 5000,
       pagination: false,

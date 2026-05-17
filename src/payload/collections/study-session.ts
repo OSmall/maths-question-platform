@@ -76,7 +76,7 @@ export const StudySession: CollectionConfig = {
     {
       name: 'user',
       type: 'relationship',
-      relationTo: 'users' as never,
+      relationTo: 'users',
       required: true,
     },
     {
@@ -131,7 +131,7 @@ export const StudySession: CollectionConfig = {
         {
           name: 'question',
           type: 'relationship',
-          relationTo: 'question' as never,
+          relationTo: 'question',
           required: true,
           validate: (value: unknown, { data }: { data?: unknown }) =>
             validateStudySessionQuestionRelationship(value, data),

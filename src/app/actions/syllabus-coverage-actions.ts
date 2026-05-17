@@ -44,7 +44,7 @@ export const saveSyllabusCoverageAction = actionClient
 
     try {
       const existingCoverage = await req.payload.find({
-        collection: 'syllabusSubTopic' as never,
+        collection: 'syllabusSubTopic',
         depth: 0,
         limit: 5000,
         pagination: false,
@@ -91,30 +91,30 @@ export const saveSyllabusCoverageAction = actionClient
 
       for (const entry of mutationPlan.create) {
         await req.payload.create({
-          collection: 'syllabusSubTopic' as never,
+          collection: 'syllabusSubTopic',
           data: {
             status: entry.status,
             subTopic: entry.subTopicId,
             syllabus: entry.syllabusId,
-          } as never,
+          },
           req,
         })
       }
 
       for (const entry of mutationPlan.update) {
         await req.payload.update({
-          collection: 'syllabusSubTopic' as never,
+          collection: 'syllabusSubTopic',
           id: entry.id,
           data: {
             status: entry.status,
-          } as never,
+          },
           req,
         })
       }
 
       for (const entry of mutationPlan.delete) {
         await req.payload.delete({
-          collection: 'syllabusSubTopic' as never,
+          collection: 'syllabusSubTopic',
           id: entry.id,
           req,
         })

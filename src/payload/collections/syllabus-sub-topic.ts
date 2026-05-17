@@ -43,13 +43,13 @@ export const SyllabusSubTopic: CollectionConfig = {
     {
       name: 'syllabus',
       type: 'relationship',
-      relationTo: 'syllabus' as never,
+      relationTo: 'syllabus',
       required: true,
     },
     {
       name: 'subTopic',
       type: 'relationship',
-      relationTo: 'subTopic' as never,
+      relationTo: 'subTopic',
       required: true,
       validate: async (
         value: unknown,
