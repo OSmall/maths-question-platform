@@ -8,6 +8,21 @@
   and build up from there. Do not assume third-party or framework behavior; check the official docs first, then verify
   the observed shape in code before layering on broader integration tests.
 
+## Test Architecture
+
+- Unit tests live under `tests/unit` and run with `bun run test:unit`. They should keep business logic fast and isolated,
+  using mocked repositories or pure domain/service inputs rather than Payload or database state.
+- Integration tests live under `tests/int` and run with `bun run test:int`. They boot Payload against an in-memory PGlite
+  database through `tests/int/setup-int-test.ts`, apply the checked-in migrations, and exercise repository/service behavior
+  against real Payload collections and hooks.
+- End-to-end tests run with `bun run test:e2e`. They use Playwright against the Next.js app and should be reserved for UI
+  flows or cross-boundary behavior that cannot be covered reliably at the unit or integration level.
+- Integration tests use `@electric-sql/pglite-socket` as a lightweight Postgres substitute. PGlite is fundamentally
+  single-connection and the socket server defaults to one connection/no concurrency, while Payload's local Postgres adapter
+  uses a normal connection pool. Avoid concurrent integration-test database writes such as `Promise.all` around
+  `payload.create`/`payload.update`; create fixture data sequentially unless the test is specifically validating concurrency
+  against a real Postgres/Neon database.
+
 ## Frontend Browser Access
 
 - Playwright MCP is available for interactive frontend inspection; before using it against the local app, check whether `http://localhost:3000` is reachable.
