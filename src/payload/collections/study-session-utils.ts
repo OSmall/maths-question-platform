@@ -91,51 +91,57 @@ export async function normalizeStudySessionInput({
     candidate.endedAt = undefined
   }
 
-  candidate.questions = await Promise.all(
-    questions.map(async (question, index) => {
-      const originalQuestion = findOriginalQuestion(originalDoc?.questions ?? [], question, index)
-      const shouldRelock =
-        operation === 'create' ||
-        questionRelationshipChanged(question, originalQuestion) ||
-        !question.questionVersionId ||
-        !Array.isArray(question.answers) ||
-        question.answers.length === 0
+  const normalizedQuestions: StudySessionQuestion[] = []
 
-      if (!shouldRelock) {
-        return {
-          ...question,
-          flagged: question.flagged ?? false,
-          status: question.status ?? 'notStarted',
-        }
-      }
+  // Keep version locking serial because the test DB only accepts one connection;
+  // concurrent DB connections can time out the call.
+  for (const [index, question] of questions.entries()) {
+    const originalQuestion = findOriginalQuestion(originalDoc?.questions ?? [], question, index)
+    const shouldRelock =
+      operation === 'create' ||
+      questionRelationshipChanged(question, originalQuestion) ||
+      !question.questionVersionId ||
+      !Array.isArray(question.answers) ||
+      question.answers.length === 0
 
-      const questionId = extractRelationshipId(question.question)
-      if (questionId === undefined) {
-        return {
-          ...question,
-          flagged: question.flagged ?? false,
-          status: question.status ?? 'notStarted',
-        }
-      }
-
-      const questionVersion = await lockQuestionVersion(questionId)
-      const partIds = extractQuestionPartIds(questionVersion)
-
-      if (partIds.length === 0) {
-        throw new Error(`Question ${questionId} version ${questionVersion.id} has no parts.`)
-      }
-
-      return {
+    if (!shouldRelock) {
+      normalizedQuestions.push({
         ...question,
-        questionVersionId: String(questionVersion.id),
-        status: 'notStarted' as const,
         flagged: question.flagged ?? false,
-        answeredAt: undefined,
-        skippedAt: undefined,
-        answers: buildUnansweredAnswers(partIds),
-      }
-    }),
-  )
+        status: question.status ?? 'notStarted',
+      })
+      continue
+    }
+
+    const questionId = extractRelationshipId(question.question)
+    if (questionId === undefined) {
+      normalizedQuestions.push({
+        ...question,
+        flagged: question.flagged ?? false,
+        status: question.status ?? 'notStarted',
+      })
+      continue
+    }
+
+    const questionVersion = await lockQuestionVersion(questionId)
+    const partIds = extractQuestionPartIds(questionVersion)
+
+    if (partIds.length === 0) {
+      throw new Error(`Question ${questionId} version ${questionVersion.id} has no parts.`)
+    }
+
+    normalizedQuestions.push({
+      ...question,
+      questionVersionId: String(questionVersion.id),
+      status: 'notStarted' as const,
+      flagged: question.flagged ?? false,
+      answeredAt: undefined,
+      skippedAt: undefined,
+      answers: buildUnansweredAnswers(partIds),
+    })
+  }
+
+  candidate.questions = normalizedQuestions
 
   return candidate
 }

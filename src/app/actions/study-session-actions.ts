@@ -8,6 +8,7 @@ import {
   NotFoundError,
   StudySessionQuestionAlreadyAnsweredError,
   StudySessionQuestionIncompleteAnswerError,
+  StudySessionQuestionInvalidAnswerError,
   StudySessionQuestionIndexError,
   StudySessionUnsupportedStateError,
 } from '@/lib/errors'
@@ -26,7 +27,11 @@ import {
   toZeroBasedQuestionIndex,
 } from './study-session-action-utils'
 
-type StudySessionActionErrorCode = 'alreadyAnswered' | 'incompleteAnswers' | 'unsupportedState'
+type StudySessionActionErrorCode =
+  | 'alreadyAnswered'
+  | 'incompleteAnswers'
+  | 'invalidAnswers'
+  | 'unsupportedState'
 
 type StudySessionActionError = {
   code: StudySessionActionErrorCode
@@ -116,6 +121,14 @@ function handleStudySessionActionError(error: Error): StudySessionActionError {
     return {
       code: 'incompleteAnswers',
       message: 'Answer every required part before submitting.',
+      status: 'error',
+    }
+  }
+
+  if (error instanceof StudySessionQuestionInvalidAnswerError) {
+    return {
+      code: 'invalidAnswers',
+      message: 'The submitted answers do not match this question. Refresh the page and try again.',
       status: 'error',
     }
   }

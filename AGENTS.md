@@ -4,6 +4,9 @@
 
 - For meaningful code changes, run `bun run lint`, `bun run build`, and/or `bun run test`.
 - If UI or user flows change, run `bun run test:e2e`.
+- When behavior is unclear, start with the smallest documented behavior, confirm it with a focused test or inspection,
+  and build up from there. Do not assume third-party or framework behavior; check the official docs first, then verify
+  the observed shape in code before layering on broader integration tests.
 
 ## Frontend Browser Access
 

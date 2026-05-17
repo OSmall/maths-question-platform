@@ -84,6 +84,16 @@ export class StudySessionQuestionIncompleteAnswerError extends AppError {
   }
 }
 
+export class StudySessionQuestionInvalidAnswerError extends AppError {
+  static ERROR_NAME = 'STUDY_SESSION_QUESTION_INVALID_ANSWER_ERROR'
+  constructor(studySessionId: number, questionIndex: number, reason: string, options: ErrorOptions = {}) {
+    super(
+      `Question ${questionIndex} in study session ${studySessionId} has invalid submitted answers: ${reason}`,
+      options,
+    )
+  }
+}
+
 export class StudySessionUnsupportedStateError extends AppError {
   static ERROR_NAME = 'STUDY_SESSION_UNSUPPORTED_STATE_ERROR'
   constructor(studySessionId: number, state: string, options: ErrorOptions = {}) {

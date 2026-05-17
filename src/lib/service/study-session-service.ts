@@ -11,6 +11,7 @@ import {
   QuestionNotRenderableError,
   StudySessionQuestionAlreadyAnsweredError,
   StudySessionQuestionIncompleteAnswerError,
+  StudySessionQuestionInvalidAnswerError,
   StudySessionQuestionIndexError,
   StudySessionUnsupportedStateError,
 } from '@/lib/errors'
@@ -23,6 +24,7 @@ import {
 } from '@/lib/repository/study-session-repository'
 import { assertNever } from '@/lib/utils/types'
 import { parseToResult } from '@/lib/utils/validation'
+import { extractRelationshipId } from '@/payload/collections/study-session-utils'
 import type { StudySession as PayloadStudySession, User } from '@/payload/payload-types'
 
 export type StudySessionAnswerSubmission =
@@ -286,18 +288,29 @@ function buildPayloadAnswersFromSubmission(
   questionIndex: number,
   payloadQuestionVersion: PayloadLockedQuestionVersionForService,
   answers: readonly StudySessionAnswerSubmission[],
-): Result<PayloadStudySession['questions'][number]['answers'], StudySessionQuestionIncompleteAnswerError> {
+): Result<
+  PayloadStudySession['questions'][number]['answers'],
+  StudySessionQuestionIncompleteAnswerError | StudySessionQuestionInvalidAnswerError
+> {
   const submittedAnswersByPartId = new Map<string, StudySessionAnswerSubmission>()
   const incompletePartIds: string[] = []
 
-  answers.forEach((answer) => {
+  for (const answer of answers) {
     if (submittedAnswersByPartId.has(answer.partId)) {
-      throw new Error(`Duplicate submitted answer for part ${answer.partId}.`)
+      return err(
+        new StudySessionQuestionInvalidAnswerError(
+          studySessionId,
+          questionIndex,
+          `Duplicate submitted answer for part ${answer.partId}.`,
+        ),
+      )
     }
     submittedAnswersByPartId.set(answer.partId, answer)
-  })
+  }
 
-  const payloadAnswers = payloadQuestionVersion.version.parts.map((part) => {
+  const payloadAnswers: PayloadStudySession['questions'][number]['answers'] = []
+
+  for (const part of payloadQuestionVersion.version.parts) {
     if (!part.id) {
       throw new Error(`Locked question version ${payloadQuestionVersion.id} has a part without an id.`)
     }
@@ -305,27 +318,44 @@ function buildPayloadAnswersFromSubmission(
     const answer = submittedAnswersByPartId.get(part.id)
     if (!answer) {
       incompletePartIds.push(part.id)
-      return undefined
+      continue
     }
 
     submittedAnswersByPartId.delete(part.id)
 
     if (answer.type !== part.response.type) {
-      throw new Error(`Submitted answer for part ${part.id} has type ${answer.type}; expected ${part.response.type}.`)
+      return err(
+        new StudySessionQuestionInvalidAnswerError(
+          studySessionId,
+          questionIndex,
+          `Submitted answer for part ${part.id} has type ${answer.type}; expected ${part.response.type}.`,
+        ),
+      )
     }
 
-    const payloadAnswer = buildPayloadAnswer(part.id, answer, part)
+    const payloadAnswerResult = buildPayloadAnswer(studySessionId, questionIndex, part.id, answer, part)
+
+    if (payloadAnswerResult.isErr()) {
+      return err(payloadAnswerResult.error)
+    }
+
+    const payloadAnswer = payloadAnswerResult.value
 
     if (payloadAnswer === undefined) {
       incompletePartIds.push(part.id)
+      continue
     }
 
-    return payloadAnswer
-  })
+    payloadAnswers.push(payloadAnswer)
+  }
 
   if (submittedAnswersByPartId.size > 0) {
-    throw new Error(
-      `Submitted answers contain unknown parts: ${Array.from(submittedAnswersByPartId.keys()).join(', ')}.`,
+    return err(
+      new StudySessionQuestionInvalidAnswerError(
+        studySessionId,
+        questionIndex,
+        `Submitted answers contain unknown parts: ${Array.from(submittedAnswersByPartId.keys()).join(', ')}.`,
+      ),
     )
   }
 
@@ -333,49 +363,60 @@ function buildPayloadAnswersFromSubmission(
     return err(new StudySessionQuestionIncompleteAnswerError(studySessionId, questionIndex, incompletePartIds))
   }
 
-  return ok(payloadAnswers.filter((answer) => answer !== undefined))
+  return ok(payloadAnswers)
 }
 
 function buildPayloadAnswer(
+  studySessionId: number,
+  questionIndex: number,
   partId: string,
   answer: StudySessionAnswerSubmission,
   part: PayloadLockedQuestionVersionForService['version']['parts'][number],
-): PayloadStudySession['questions'][number]['answers'][number] | undefined {
+): Result<
+  PayloadStudySession['questions'][number]['answers'][number] | undefined,
+  StudySessionQuestionInvalidAnswerError
+> {
   switch (answer.type) {
     case 'multipleChoice': {
       const choiceIds = new Set((part.response.multipleChoice?.choices ?? []).map((choice) => choice.id))
       if (!choiceIds.has(answer.choiceId)) {
-        throw new Error(`Submitted answer for part ${partId} has invalid choice ${answer.choiceId}.`)
+        return err(
+          new StudySessionQuestionInvalidAnswerError(
+            studySessionId,
+            questionIndex,
+            `Submitted answer for part ${partId} has invalid choice ${answer.choiceId}.`,
+          ),
+        )
       }
 
-      return {
+      return ok({
         partId,
         type: answer.type,
         multipleChoice: {
           choiceId: answer.choiceId,
         },
-      }
+      })
     }
     case 'shortText':
       if (answer.answer.trim().length === 0) {
-        return undefined
+        return ok(undefined)
       }
 
-      return {
+      return ok({
         partId,
         type: answer.type,
         shortText: {
           answer: answer.answer,
         },
-      }
+      })
     case 'selfReport':
-      return {
+      return ok({
         partId,
         type: answer.type,
         selfReport: {
           answer: answer.answer,
         },
-      }
+      })
     default:
       assertNever(answer)
   }
@@ -400,9 +441,9 @@ function assertLockedQuestionVersionMatchesSessionQuestion(
   payloadQuestionVersion: PayloadLockedQuestionVersionForService,
   studySessionQuestion: StudySession['questions'][number],
 ) {
-  const parentId = Number(payloadQuestionVersion.parent)
+  const parentId = extractRelationshipId(payloadQuestionVersion.parent)
 
-  if (!Number.isInteger(parentId) || parentId !== studySessionQuestion.questionId) {
+  if (parentId !== studySessionQuestion.questionId) {
     throw new Error(
       `Locked question version ${payloadQuestionVersion.id} does not belong to question ${studySessionQuestion.questionId}.`,
     )

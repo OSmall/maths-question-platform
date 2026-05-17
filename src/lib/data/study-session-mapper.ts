@@ -50,7 +50,7 @@ export function payloadQuestionVersionToRenderableQuestionCandidate({
 
   return {
     id: assertPayloadQuestionParentId(payloadQuestionVersion),
-    version: payloadQuestionVersion.id,
+    version: String(payloadQuestionVersion.id),
     index,
     prompt: payloadQuestion.prompt ?? undefined,
     subTopics: mapPayloadSubTopics(payloadQuestion.subTopics),

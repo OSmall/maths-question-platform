@@ -4,7 +4,7 @@ import { getPayload } from 'payload'
 import { PayloadQueryError } from '@/lib/errors'
 import { handleRepositoryError } from '@/lib/repository/repository-utils'
 import { StudySession } from '@/payload/collections/study-session'
-import type { QuestionSelect, StudySessionSelect, User } from '@/payload/payload-types'
+import type { StudySessionSelect, User } from '@/payload/payload-types'
 import config from '@payload-config'
 
 const studySessionSelect = {
@@ -36,37 +36,6 @@ const studySessionSelect = {
   },
 } as const satisfies StudySessionSelect
 
-const lockedQuestionVersionSelect = {
-  prompt: true,
-  subTopics: true,
-  parts: {
-    id: true,
-    prompt: true,
-    response: {
-      type: true,
-      multipleChoice: {
-        choices: {
-          id: true,
-          text: true,
-          isCorrect: true,
-        },
-        shuffle: true,
-      },
-      shortText: {
-        acceptedAnswers: {
-          id: true,
-          value: true,
-        },
-      },
-      selfReport: {},
-    },
-    workedSolutions: {
-      id: true,
-      prompt: true,
-    },
-  },
-} as const satisfies QuestionSelect
-
 type UserAccessOptions = {
   user?: User
 }
@@ -90,7 +59,6 @@ async function queryLockedQuestionVersionById(id: string) {
     collection: 'question',
     id,
     depth: 2,
-    select: lockedQuestionVersionSelect,
   })
 }
 
@@ -108,7 +76,7 @@ async function updatePayloadStudySession(
       begunAt: studySession.begunAt ?? undefined,
       endedAt: studySession.endedAt ?? undefined,
       questions: studySession.questions.map((question) => ({
-        id: question.id ?? undefined,
+        ...(question.id ? { id: question.id } : {}),
         question: relationshipId(question.question),
         questionVersionId: question.questionVersionId,
         status: question.status,
@@ -116,7 +84,7 @@ async function updatePayloadStudySession(
         answeredAt: question.answeredAt ?? undefined,
         skippedAt: question.skippedAt ?? undefined,
         answers: question.answers.map((answer) => ({
-          id: answer.id ?? undefined,
+          ...(answer.id ? { id: answer.id } : {}),
           partId: answer.partId,
           type: answer.type,
           multipleChoice: answer.multipleChoice,
