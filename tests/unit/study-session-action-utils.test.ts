@@ -61,7 +61,9 @@ describe('study session action utils', () => {
   })
 
   it('builds one-based StudySession question paths and converts to zero-based indexes', () => {
+    expect(buildStudySessionQuestionPath(123, 1)).toBe('/study-session/123/question/1')
     expect(buildStudySessionQuestionPath(123, 2)).toBe('/study-session/123/question/2')
+    expect(toZeroBasedQuestionIndex(1)).toBe(0)
     expect(toZeroBasedQuestionIndex(2)).toBe(1)
   })
 })
