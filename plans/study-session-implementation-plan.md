@@ -16,7 +16,7 @@ This plan implements GitHub issue #14: persisted StudySessions with locked quest
 - Remove the Save button globally.
 - Preview Flag is URL-backed and uses SWR optimistic updates with Next router `replace`; StudySession Flag is persisted with SWR optimistic updates.
 - Submit and Skip use server actions. Continue is navigation/no-op on the last question.
-- StudySession question URLs are one-based for users; service/domain question indexes remain zero-based.
+- StudySession question URLs are one-based for users; service/session question lookup indexes remain zero-based, while render models expose one-based display numbers.
 - Keep `notStarted` future-modeled but unsupported in the current route; if an owned session is `notStarted`, return a service business error and show a simple route-level message.
 - Timer is a tiny client island ticking every second.
 - Add Payload-backed frontend authentication before StudySession server actions/routes.
@@ -92,7 +92,7 @@ Status: Completed
 - Add Zod schemas for answer variants, question status variants, and top-level state variants.
 - Use `z.iso.datetime()` and spread-based object composition.
 - Replace question render `seed` with `shuffleKeyBase`.
-- Make `RenderableQuestion.index` zero-based; UI displays `index + 1`.
+- Make `RenderableQuestion.index` a one-based display number; keep service/session lookup indexes zero-based.
 - Add mappers from Payload StudySession and Payload question versions to domain/render models.
 - Map Payload `null` timestamps to `undefined`.
 - Unit test state invariants, answer variants, duplicate questions, timestamp rules, and mapper behavior.
@@ -459,7 +459,7 @@ Verification target:
 
 ### Stage 11: Final Verification
 
-Status: Pending
+Status: Completed
 
 - Run `bun run generate:types` if Payload types changed during refinement.
 - Run `bun run migrate` if not already verified.
@@ -470,3 +470,27 @@ Status: Pending
 - Run `bun run test:e2e`, including the login flow coverage added in the auth stage.
 - Use Playwright MCP for interactive inspection of changed frontend flows.
 - In the PR/implementation summary, explicitly note that AC 7 changed from stored random seed to derived `shuffleKeyBase`.
+
+Behavior refined during verification:
+
+- Fixed the shared question card header to display one-based question numbers instead of zero-based domain indexes.
+- Replaced placeholder summary values with values derived from the current question evaluation and current flag state.
+- Refreshed the StudySession route after persisted flag updates so the summary rail matches the optimistic flag button state.
+- Updated answer/action copy so it matches required answer validation instead of saying blank answers can be submitted.
+
+Verification completed:
+
+- `bun run generate:types` passed.
+- `bun run migrate` passed.
+- `bun run lint` passed with existing warnings.
+- `bun run typecheck` passed.
+- `bun run test:unit` passed.
+- `bun run build` passed with existing warnings.
+- `bun run test:e2e` passed, including login flow coverage.
+- Playwright MCP inspection covered login, protected route redirects, preview question flagging, StudySession flagging, answered review mode, and mobile review layout.
+
+Notes:
+
+- AC 7 changed from storing a random seed to deriving `shuffleKeyBase`.
+- Browser inspection still shows the existing missing `/favicon.ico` 404.
+- Login fields can show browser-saved autofill values after navigation; this appears to be normal browser/password-manager behavior with the current autocomplete attributes.

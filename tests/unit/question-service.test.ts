@@ -38,7 +38,7 @@ describe('getQuestionById', () => {
 
     expect(result.value).toEqual({
       id: 42,
-      index: 0,
+      index: 1,
       version: 'question-42',
       shuffleKeyBase: 'seed-123',
       prompt: nonEmptyRichText,
@@ -46,6 +46,7 @@ describe('getQuestionById', () => {
       parts: [
         {
           id: 'part-1',
+          partNumber: 1,
           prompt: undefined,
           response: {
             type: 'multipleChoice',

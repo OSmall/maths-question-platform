@@ -76,6 +76,7 @@ export default async function QuestionPage({
           <QuestionRenderer
             flagControl={<PreviewQuestionFlagButton initialFlagged={isFlagged} />}
             isDraftMode={isDraftMode}
+            isQuestionFlagged={isFlagged}
             question={question}
             questionSubmissionEvaluation={questionSubmissionEvaluation}
             routeFields={[

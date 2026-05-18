@@ -16,11 +16,12 @@ export function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuesti
   return {
     id: payloadQuestion.id,
     version: `question-${payloadQuestion.id}`,
-    index: 0,
+    index: 1,
     prompt: payloadQuestion.prompt ?? undefined,
     subTopics: mapPayloadSubTopics(payloadQuestion.subTopics),
-    parts: parts.map((payloadQuestionPart: PayloadQuestionPart) => ({
+    parts: parts.map((payloadQuestionPart: PayloadQuestionPart, index) => ({
       id: payloadQuestionPart?.id ?? undefined,
+      partNumber: index + 1,
       prompt: isMultipart ? (payloadQuestionPart?.prompt ?? undefined) : undefined,
       response: payloadResponseToAttemptCandidate(payloadQuestionPart?.response),
     })),

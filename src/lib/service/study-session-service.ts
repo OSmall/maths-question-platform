@@ -84,7 +84,7 @@ export function getStudySessionQuestionByIndex(
         const question = parseToResult(
           renderableQuestionSchema,
           payloadQuestionVersionToRenderableQuestionCandidate({
-            index: questionIndex,
+            questionNumber: questionIndex + 1,
             payloadQuestionVersion,
             shuffleKeyBase,
           }),

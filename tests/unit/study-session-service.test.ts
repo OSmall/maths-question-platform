@@ -59,7 +59,7 @@ describe('study session service', () => {
 
     expect(result.value.question).toMatchObject({
       id: 10,
-      index: 0,
+      index: 1,
       version: 'version-10',
       shuffleKeyBase: '123:0:10',
     })

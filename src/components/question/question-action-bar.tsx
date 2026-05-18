@@ -44,7 +44,7 @@ export const QuestionActionBar = ({
             <p className="text-sm leading-6 text-muted-foreground">
               {isSubmitted
                 ? 'Review mode is a read-only snapshot for this placeholder flow.'
-                : `Blank parts can still be submitted. The server will evaluate the whole question together.`}
+                : 'All required parts must be answered before the server checks the whole question.'}
             </p>
           </div>
         </div>

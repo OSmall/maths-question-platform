@@ -10,6 +10,7 @@ import type {
 
 type QuestionSessionSummaryProps = {
   isDraftMode: boolean
+  isQuestionFlagged: boolean
   question: RenderableQuestion
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
   timer?: {
@@ -20,15 +21,23 @@ type QuestionSessionSummaryProps = {
 
 export const QuestionSessionSummary = ({
   isDraftMode,
+  isQuestionFlagged,
   question,
   questionSubmissionEvaluation,
   timer,
 }: QuestionSessionSummaryProps) => {
-  const completionPercent = 50
-  const answeredCount = 0
-  const flaggedCount = 0
-  const activeAccuracyLabel = 'active accuracy label'
+  const answeredCount = questionSubmissionEvaluation.answeredParts
+  const completionPercent = Math.round((answeredCount / question.parts.length) * 100)
+  const flaggedCount = isQuestionFlagged ? 1 : 0
+  const activeAccuracyLabel = questionSubmissionEvaluation.isEvaluated
+    ? `${questionSubmissionEvaluation.correctParts}/${question.parts.length}`
+    : 'Pending'
   const attemptLabel = 'Attempt #1'
+  const reviewLabel = questionSubmissionEvaluation.isEvaluated
+    ? questionSubmissionEvaluation.incorrectParts > 0
+      ? 'Review'
+      : 'Complete'
+    : 'Pending'
 
   return (
     <>
@@ -48,7 +57,7 @@ export const QuestionSessionSummary = ({
           <div className="mt-4 flex items-start justify-between gap-3">
             <div>
               <p className="text-sm font-medium text-muted-foreground">Study session</p>
-              <p className="text-xl font-semibold text-foreground">Question {question.index + 1}</p>
+              <p className="text-xl font-semibold text-foreground">Question {question.index}</p>
             </div>
 
             <div className="rounded-2xl border border-border/70 bg-background/80 px-3 py-2 text-right">
@@ -77,7 +86,7 @@ export const QuestionSessionSummary = ({
           <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
             <CompactStat label="Time" value={<QuestionTimer {...timer} />} />
             <CompactStat label="Flagged" value={String(flaggedCount)} />
-            <CompactStat label="Review" value="Pending" />
+            <CompactStat label="Review" value={reviewLabel} />
           </div>
         </div>
       </section>
@@ -101,7 +110,7 @@ export const QuestionSessionSummary = ({
           <div className="mt-4 space-y-1">
             <p className="text-sm font-medium text-muted-foreground">Study session</p>
             <h2 className="text-2xl font-semibold tracking-tight text-foreground">
-              Question {question.index + 1}
+              Question {question.index}
             </h2>
             <p className="text-sm leading-6 text-muted-foreground">
               Read, answer, review the worked methods, then continue.
@@ -187,17 +196,17 @@ export const QuestionSessionSummary = ({
               Question parts
             </p>
             <div className="mt-3 space-y-2">
-              {question.parts.map((part, index) => (
+              {question.parts.map((part) => (
                 <a
                   className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/65 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                   href={`#part-${part.id}`}
                   key={part.id}
                 >
                   <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                    {index + 1}
+                    {part.partNumber}
                   </span>
                   <div>
-                    <p>Part {index + 1}</p>
+                    <p>Part {part.partNumber}</p>
                     <p className="text-xs text-muted-foreground">
                       {answerTypeLabel(part.response.type)}
                     </p>

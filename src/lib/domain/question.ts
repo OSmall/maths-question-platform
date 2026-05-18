@@ -12,6 +12,7 @@ const subTopicSchema = z.object({
 
 const renderableQuestionPartSchema = z.object({
   id: z.string().min(1),
+  partNumber: z.number().int().positive(),
   prompt: richTextSchema,
   response: questionResponseDiscriminatedUnion({
     multipleChoice: {
@@ -29,7 +30,7 @@ const renderableQuestionPartSchema = z.object({
 
 export const renderableQuestionSchema = z
   .object({
-    index: z.number(), // index within the list of questions
+    index: z.number().int().positive(), // one-based display number within the list of questions
     id: z.number(), // globally unique identifier
     version: z.string().min(1),
     prompt: richTextSchema,
@@ -38,6 +39,16 @@ export const renderableQuestionSchema = z
     parts: z.array(renderableQuestionPartSchema).min(1),
   })
   .superRefine((question, ctx) => {
+    question.parts.forEach((part, index) => {
+      if (part.partNumber !== index + 1) {
+        ctx.addIssue({
+          code: 'custom',
+          message: 'Renderable question part numbers must match display order.',
+          path: ['parts', index, 'partNumber'],
+        })
+      }
+    })
+
     if (question.parts.length === 1 && !hasText(question.prompt)) {
       ctx.addIssue({
         code: 'custom',

@@ -67,6 +67,7 @@ export default async function StudySessionQuestionPage({ params }: StudySessionQ
                 />
               }
               isDraftMode={false}
+              isQuestionFlagged={studySessionQuestion.flagged}
               question={question}
               questionSubmissionEvaluation={questionSubmissionEvaluation}
               routeFields={[

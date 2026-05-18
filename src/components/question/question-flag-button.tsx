@@ -92,6 +92,7 @@ export function StudySessionQuestionFlagButton({
   setFlaggedAction,
   studySessionId,
 }: StudySessionQuestionFlagButtonProps) {
+  const router = useRouter()
   const cacheKey = `study-session-question-flag:${studySessionId}:${questionNumber}`
   const { data, mutate, isValidating } = useSWR<FlagState>(cacheKey, null, {
     fallbackData: { flagged: initialFlagged },
@@ -124,9 +125,11 @@ export function StudySessionQuestionFlagButton({
             }
 
             if (result?.data && 'flagged' in result.data) {
+              router.refresh()
               return { flagged: result.data.flagged }
             }
 
+            router.refresh()
             return { flagged: nextFlagged }
           },
           {

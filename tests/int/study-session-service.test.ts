@@ -76,11 +76,12 @@ describe('study session service integration', () => {
     })
     expect(result.value.question).toMatchObject({
       id: questions[0]?.id,
-      index: 0,
+      index: 1,
       shuffleKeyBase: `${session.id}:0:${questions[0]?.id}`,
       parts: [
         {
           id: mcPart.id,
+          partNumber: 1,
           response: {
             type: 'multipleChoice',
             choices: {

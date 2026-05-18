@@ -38,6 +38,7 @@ type QuestionRendererProps = {
   } | void>
   flagControl?: ReactNode
   isDraftMode: boolean
+  isQuestionFlagged: boolean
   question: RenderableQuestion
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
   controls?: {
@@ -56,6 +57,7 @@ export const QuestionRenderer = ({
   controls,
   flagControl,
   isDraftMode,
+  isQuestionFlagged,
   question,
   questionSubmissionEvaluation,
   routeFields = [],
@@ -77,6 +79,7 @@ export const QuestionRenderer = ({
         <div className="grid gap-4 lg:grid-cols-[280px_minmax(0,1fr)] lg:gap-6">
           <QuestionSessionSummary
             isDraftMode={isDraftMode}
+            isQuestionFlagged={isQuestionFlagged}
             question={question}
             questionSubmissionEvaluation={questionSubmissionEvaluation}
             timer={timer}
@@ -104,9 +107,9 @@ export const QuestionRenderer = ({
                             {question.parts.length > 1 ? (
                               <div className="inline-flex items-center gap-3 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
                                 <span className="flex size-6 items-center justify-center rounded-full bg-primary text-[11px] font-semibold text-primary-foreground">
-                                  {index + 1}
+                                  {part.partNumber}
                                 </span>
-                                Part {index + 1}
+                                Part {part.partNumber}
                               </div>
                             ) : null}
 
@@ -134,7 +137,7 @@ export const QuestionRenderer = ({
                                   {part.response.type === 'multipleChoice'
                                     ? 'Pick one option. The entire question is checked in one submission.'
                                     : part.response.type === 'shortText'
-                                      ? 'Enter your final answer. You can still submit blank parts.'
+                                      ? 'Enter your final answer before checking the question.'
                                       : 'Mark whether you solved this confidently before you review the model solution.'}
                                 </p>
                               </div>
