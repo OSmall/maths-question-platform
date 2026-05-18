@@ -394,7 +394,7 @@ Verification target:
 
 ### Stage 10: SWR And Sonner
 
-Status: Pending
+Status: Completed
 
 - Add `swr`.
 - Add shadcn `sonner` with `bunx shadcn@latest add @shadcn/sonner`.
@@ -406,6 +406,24 @@ Status: Pending
 - Use optimistic update, rollback on error, and populate canonical result.
 - Coalesce rapid clicks with last-write-wins semantics: one in-flight request and one follow-up if desired state changed.
 - Show `toast.error(...)` on flag failure and roll back to the last confirmed value.
+
+Behavior implemented:
+
+- `swr` and `sonner` are installed.
+- shadcn `sonner` is added at `src/components/ui/sonner.tsx`.
+- The frontend layout mounts `<Toaster />`.
+- Preview and StudySession flag controls both use SWR with the same `{ flagged }` cache shape.
+- Preview flag mutation is URL-backed with Next router `replace` and `revalidate: false`.
+- StudySession flag mutation calls the persisted flag server action and populates the canonical server result.
+- Both flag controls use optimistic updates, `rollbackOnError: true`, and `populateCache: true`.
+- Flag mutation failures show `toast.error(...)` after rollback.
+- No extra in-flight coalescing code was added: flag mutations send absolute desired `{ flagged }` values, and rapid clicks already update SWR optimistically toward the latest clicked state. Extra serialization was judged unnecessary unless a real stale-completion race is observed.
+
+Verification completed:
+
+- `bun run lint` passed with existing warnings.
+- `bun run typecheck` passed.
+- `bun run build` passed with existing warnings after rerun; the first attempt compiled but hit transient page-data collection missing-module errors.
 
 Verification target:
 

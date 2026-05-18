@@ -2,12 +2,17 @@
 
 import { Flag } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { toast } from 'sonner'
 import useSWR from 'swr'
 
 import { Button } from '@/components/ui/button'
 
 type FlagState = {
   flagged: boolean
+}
+
+function getFlagErrorMessage(error: unknown) {
+  return error instanceof Error && error.message ? error.message : 'Unable to update flag'
 }
 
 type PreviewQuestionFlagButtonProps = {
@@ -68,7 +73,9 @@ export function PreviewQuestionFlagButton({ initialFlagged }: PreviewQuestionFla
             revalidate: false,
             rollbackOnError: true,
           },
-        )
+        ).catch((error: unknown) => {
+          toast.error(getFlagErrorMessage(error))
+        })
       }}
       type="button"
       variant={flagged ? 'secondary' : 'outline'}
@@ -128,7 +135,9 @@ export function StudySessionQuestionFlagButton({
             revalidate: false,
             rollbackOnError: true,
           },
-        )
+        ).catch((error: unknown) => {
+          toast.error(getFlagErrorMessage(error))
+        })
       }}
       type="button"
       variant={flagged ? 'secondary' : 'outline'}
