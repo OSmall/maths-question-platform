@@ -6,9 +6,12 @@ import type {
   StudySessionAnswer,
   StudySessionQuestion,
 } from '@/lib/domain/study-session'
-import type { Question as PayloadQuestion, StudySession as PayloadStudySession } from '@/payload/payload-types'
+import type {
+  Question as PayloadQuestion,
+  StudySession as PayloadStudySession,
+} from '@/payload/payload-types'
 import { extractRelationshipId } from '@/payload/collections/study-session-utils'
-import { toNonNullableOrThrow } from '@/lib/utils/types'
+import { assertNever, toNonNullableOrThrow } from '@/lib/utils/types'
 
 type PayloadQuestionPart = PayloadQuestion['parts'][number]
 type PayloadQuestionResponse = PayloadQuestionPart['response'] | undefined
@@ -17,7 +20,7 @@ type PayloadStudySessionForMapper = Pick<
   'begunAt' | 'endedAt' | 'id' | 'questions' | 'state'
 >
 type PayloadStudySessionQuestion = PayloadStudySession['questions'][number]
-type PayloadStudySessionAnswer = PayloadStudySessionQuestion['answers'][number]
+type PayloadStudySessionAnswer = NonNullable<PayloadStudySessionQuestion['answers']>[number]
 type PayloadQuestionVersion = TypeWithVersion<PayloadQuestion>
 type PayloadSubTopic = NonNullable<PayloadQuestion['subTopics']>[number]
 
@@ -26,7 +29,7 @@ export function payloadStudySessionToDomainCandidate(
 ): StudySession {
   return {
     id: payloadStudySession.id,
-    state: payloadStudySession.state,
+    state: toNonNullableOrThrow(payloadStudySession.state),
     begunAt: payloadStudySession.begunAt ?? undefined,
     endedAt: payloadStudySession.endedAt ?? undefined,
     questions: payloadStudySession.questions.map((question, index) =>
@@ -73,7 +76,9 @@ export function buildStudySessionQuestionSubmissionEvaluationCandidate({
   const answersByPartId = R.indexBy(studySessionQuestion.answers, (answer) => answer.partId)
   const parts = payloadQuestionVersion.version.parts.map((part) => {
     if (!part.id) {
-      throw new Error(`Locked question version ${payloadQuestionVersion.id} has a part without an id.`)
+      throw new Error(
+        `Locked question version ${payloadQuestionVersion.id} has a part without an id.`,
+      )
     }
 
     const answer = answersByPartId[part.id]
@@ -91,7 +96,8 @@ export function buildStudySessionQuestionSubmissionEvaluationCandidate({
   if (studySessionQuestion.status !== 'answered') {
     return {
       isEvaluated: false,
-      answeredParts: studySessionQuestion.answers.filter((answer) => answer.type !== 'unanswered').length,
+      answeredParts: studySessionQuestion.answers.filter((answer) => answer.type !== 'unanswered')
+        .length,
       parts: partRecord,
     }
   }
@@ -120,12 +126,12 @@ function payloadStudySessionQuestionToDomainCandidate(
     id: question.id ?? undefined,
     index,
     questionId: extractRequiredRelationshipId(question.question, 'study session question'),
-    questionVersionId: question.questionVersionId,
+    questionVersionId: toNonNullableOrThrow(question.questionVersionId),
     status: question.status,
     flagged: question.flagged,
     answeredAt: question.answeredAt ?? undefined,
     skippedAt: question.skippedAt ?? undefined,
-    answers: question.answers.map(payloadStudySessionAnswerToDomainCandidate),
+    answers: (question.answers ?? []).map(payloadStudySessionAnswerToDomainCandidate),
   }
 }
 
@@ -156,10 +162,14 @@ function payloadStudySessionAnswerToDomainCandidate(
         type: answer.type,
         answer: toNonNullableOrThrow(answer.selfReport?.answer),
       }
+    default:
+      return assertNever(answer.type)
   }
 }
 
-function payloadResponseToRenderableQuestionPartCandidate(payloadResponse: PayloadQuestionResponse) {
+function payloadResponseToRenderableQuestionPartCandidate(
+  payloadResponse: PayloadQuestionResponse,
+) {
   switch (payloadResponse?.type) {
     case 'selfReport':
     case 'shortText':
@@ -254,7 +264,10 @@ function buildQuestionSubmissionEvaluationPart(
   }
 }
 
-function throwMismatchedAnswerType(payloadQuestionPart: PayloadQuestionPart, answerType: string): never {
+function throwMismatchedAnswerType(
+  payloadQuestionPart: PayloadQuestionPart,
+  answerType: string,
+): never {
   throw new Error(
     `Answer type ${answerType} does not match question part ${payloadQuestionPart.id} type ${payloadQuestionPart.response.type}.`,
   )

@@ -4,7 +4,11 @@ import { getPayload } from 'payload'
 import { PayloadQueryError } from '@/lib/errors'
 import { handleRepositoryError } from '@/lib/repository/repository-utils'
 import { StudySession } from '@/payload/collections/study-session'
-import type { StudySessionSelect, User } from '@/payload/payload-types'
+import type {
+  StudySession as PayloadStudySession,
+  StudySessionSelect,
+  User,
+} from '@/payload/payload-types'
 import config from '@payload-config'
 
 const studySessionSelect = {
@@ -40,16 +44,37 @@ type UserAccessOptions = {
   user?: User
 }
 
-async function queryPayloadStudySessionById(id: number, options: UserAccessOptions = {}) {
+type PayloadStudySessionQuestionForService = Omit<
+  PayloadStudySession['questions'][number],
+  'answers' | 'questionVersionId'
+> & {
+  answers: NonNullable<PayloadStudySession['questions'][number]['answers']>
+  questionVersionId: string
+}
+
+export type PayloadStudySessionForService = Pick<
+  PayloadStudySession,
+  'begunAt' | 'endedAt' | 'id'
+> & {
+  questions: PayloadStudySessionQuestionForService[]
+  state: NonNullable<PayloadStudySession['state']>
+}
+
+async function queryPayloadStudySessionById(
+  id: number,
+  options: UserAccessOptions = {},
+): Promise<PayloadStudySessionForService> {
   const payload = await getPayload({ config })
 
-  return payload.findByID({
+  const studySession = await payload.findByID({
     collection: 'studySession',
     id,
     depth: 0,
     ...(options.user ? { overrideAccess: false, user: options.user } : {}),
     select: studySessionSelect,
   })
+
+  return studySession as PayloadStudySessionForService
 }
 
 async function queryLockedQuestionVersionById(id: string) {
@@ -65,10 +90,10 @@ async function queryLockedQuestionVersionById(id: string) {
 async function updatePayloadStudySession(
   studySession: PayloadStudySessionForService,
   options: UserAccessOptions = {},
-) {
+): Promise<PayloadStudySessionForService> {
   const payload = await getPayload({ config })
 
-  return payload.update({
+  const updatedStudySession = await payload.update({
     collection: 'studySession',
     id: studySession.id,
     data: {
@@ -76,15 +101,15 @@ async function updatePayloadStudySession(
       begunAt: studySession.begunAt ?? undefined,
       endedAt: studySession.endedAt ?? undefined,
       questions: studySession.questions.map((question) => ({
-        ...(question.id ? { id: question.id } : {}),
+        id: question.id,
         question: relationshipId(question.question),
         questionVersionId: question.questionVersionId,
         status: question.status,
         flagged: question.flagged,
-        answeredAt: question.answeredAt ?? undefined,
-        skippedAt: question.skippedAt ?? undefined,
+        answeredAt: question.answeredAt,
+        skippedAt: question.skippedAt,
         answers: question.answers.map((answer) => ({
-          ...(answer.id ? { id: answer.id } : {}),
+          id: answer.id,
           partId: answer.partId,
           type: answer.type,
           multipleChoice: answer.multipleChoice,
@@ -97,6 +122,8 @@ async function updatePayloadStudySession(
     ...(options.user ? { overrideAccess: false, user: options.user } : {}),
     select: studySessionSelect,
   })
+
+  return updatedStudySession as PayloadStudySessionForService
 }
 
 export function fetchStudySessionByIdResult(id: number, options: UserAccessOptions = {}) {
@@ -117,10 +144,12 @@ export function updateStudySessionResult(
   studySession: PayloadStudySessionForService,
   options: UserAccessOptions = {},
 ) {
-  return ResultAsync.fromPromise(updatePayloadStudySession(studySession, options), (error) => new PayloadQueryError(error))
+  return ResultAsync.fromPromise(
+    updatePayloadStudySession(studySession, options),
+    (error) => new PayloadQueryError(error),
+  )
 }
 
-export type PayloadStudySessionForService = Awaited<ReturnType<typeof queryPayloadStudySessionById>>
 export type PayloadLockedQuestionVersionForService = Awaited<
   ReturnType<typeof queryLockedQuestionVersionById>
 >

@@ -13,10 +13,16 @@ import type {
 } from '@/lib/repository/study-session-repository'
 
 const fetchStudySessionByIdResult = mock((id: number) =>
-  ResultAsync.fromPromise(Promise.resolve(createPayloadStudySession(id)), (error) => error as Error),
+  ResultAsync.fromPromise(
+    Promise.resolve(createPayloadStudySession(id)),
+    (error) => error as Error,
+  ),
 )
 const fetchLockedQuestionVersionByIdResult = mock((id: string) =>
-  ResultAsync.fromPromise(Promise.resolve(createPayloadQuestionVersion(id)), (error) => error as Error),
+  ResultAsync.fromPromise(
+    Promise.resolve(createPayloadQuestionVersion(id)),
+    (error) => error as Error,
+  ),
 )
 const updateStudySessionResult = mock((studySession: PayloadStudySessionForService) =>
   ResultAsync.fromPromise(Promise.resolve(studySession), (error) => error as Error),
@@ -90,7 +96,7 @@ describe('study session service', () => {
         {
           status: 'answered',
           answeredAt: now.toISOString(),
-          skippedAt: undefined,
+          skippedAt: null,
           answers: [
             {
               partId: 'part-1',
@@ -110,10 +116,7 @@ describe('study session service', () => {
         Promise.resolve({
           ...createPayloadStudySession(id),
           endedAt: '2026-05-01T00:00:00.000Z',
-          questions: [
-            createPayloadStudySessionQuestion(10),
-            createPayloadStudySessionQuestion(11),
-          ],
+          questions: [createPayloadStudySessionQuestion(10), createPayloadStudySessionQuestion(11)],
         } satisfies PayloadStudySessionForService),
         (error) => error as Error,
       ),
@@ -131,6 +134,42 @@ describe('study session service', () => {
     const updatedSession = updateStudySessionResult.mock.calls[0]?.[0]
     expect(updatedSession?.state).toBe('started')
     expect(updatedSession?.endedAt).toBeUndefined()
+  })
+
+  it('clears skippedAt with null when answering a previously skipped question', async () => {
+    const skippedAt = '2026-05-04T09:30:00.000Z'
+    const now = new Date('2026-05-04T10:11:12.000Z')
+
+    fetchStudySessionByIdResult.mockImplementationOnce((id: number) =>
+      ResultAsync.fromPromise(
+        Promise.resolve({
+          ...createPayloadStudySession(id),
+          questions: [
+            {
+              ...createPayloadStudySessionQuestion(10),
+              status: 'skipped',
+              skippedAt,
+            },
+          ],
+        } satisfies PayloadStudySessionForService),
+        (error) => error as Error,
+      ),
+    )
+
+    const result = await submitStudySessionQuestionAnswers(
+      123,
+      0,
+      [{ partId: 'part-1', type: 'multipleChoice', choiceId: 'choice-a' }],
+      { now },
+    )
+
+    expect(result.isOk()).toBe(true)
+    const updatedSession = updateStudySessionResult.mock.calls[0]?.[0]
+    expect(updatedSession?.questions[0]).toMatchObject({
+      status: 'answered',
+      answeredAt: now.toISOString(),
+      skippedAt: null,
+    })
   })
 
   it('persists skipped status and leaves the session started', async () => {
@@ -221,7 +260,10 @@ describe('study session service', () => {
 
   it('returns a business error when a short text answer is blank', async () => {
     fetchLockedQuestionVersionByIdResult.mockImplementationOnce((id: string) =>
-      ResultAsync.fromPromise(Promise.resolve(createPayloadQuestionVersion(id, 'shortText')), (error) => error as Error),
+      ResultAsync.fromPromise(
+        Promise.resolve(createPayloadQuestionVersion(id, 'shortText')),
+        (error) => error as Error,
+      ),
     )
 
     const result = await submitStudySessionQuestionAnswers(123, 0, [
@@ -276,7 +318,9 @@ function createPayloadStudySession(id: number): PayloadStudySessionForService {
   } satisfies PayloadStudySessionForService
 }
 
-function createPayloadStudySessionQuestion(questionId: number): PayloadStudySessionForService['questions'][number] {
+function createPayloadStudySessionQuestion(
+  questionId: number,
+): PayloadStudySessionForService['questions'][number] {
   return {
     id: `row-${questionId}`,
     question: questionId,

@@ -5,7 +5,10 @@ import {
   payloadQuestionVersionToRenderableQuestionCandidate,
   payloadStudySessionToDomainCandidate,
 } from '@/lib/data/study-session-mapper'
-import { renderableQuestionSchema, renderableQuestionSubmissionEvaluationSchema } from '@/lib/domain/question'
+import {
+  renderableQuestionSchema,
+  renderableQuestionSubmissionEvaluationSchema,
+} from '@/lib/domain/question'
 import { studySessionSchema, type StudySession } from '@/lib/domain/study-session'
 import {
   QuestionNotRenderableError,
@@ -72,7 +75,10 @@ export function getStudySessionQuestionByIndex(
 
     return fetchLockedQuestionVersionByIdResult(studySessionQuestion.questionVersionId).andThen(
       (payloadQuestionVersion) => {
-        assertLockedQuestionVersionMatchesSessionQuestion(payloadQuestionVersion, studySessionQuestion)
+        assertLockedQuestionVersionMatchesSessionQuestion(
+          payloadQuestionVersion,
+          studySessionQuestion,
+        )
 
         const shuffleKeyBase = `${studySessionId}:${questionIndex}:${studySessionQuestion.questionId}`
         const question = parseToResult(
@@ -134,7 +140,10 @@ export function submitStudySessionQuestionAnswers(
 
     return fetchLockedQuestionVersionByIdResult(studySessionQuestion.questionVersionId).andThen(
       (payloadQuestionVersion) => {
-        assertLockedQuestionVersionMatchesSessionQuestion(payloadQuestionVersion, studySessionQuestion)
+        assertLockedQuestionVersionMatchesSessionQuestion(
+          payloadQuestionVersion,
+          studySessionQuestion,
+        )
 
         const payloadAnswersResult = buildPayloadAnswersFromSubmission(
           studySessionId,
@@ -147,19 +156,20 @@ export function submitStudySessionQuestionAnswers(
           return err(payloadAnswersResult.error)
         }
 
-        const nextQuestions = payloadStudySession.questions.map((question, index) => {
-          if (index !== questionIndex) {
-            return question
-          }
+        const nextQuestions: PayloadStudySessionForService['questions'] =
+          payloadStudySession.questions.map((question, index) => {
+            if (index !== questionIndex) {
+              return question
+            }
 
-          return {
-            ...question,
-            status: 'answered' as const,
-            answeredAt: nowIso,
-            skippedAt: undefined,
-            answers: payloadAnswersResult.value,
-          }
-        })
+            return {
+              ...question,
+              status: 'answered' as const,
+              answeredAt: nowIso,
+              skippedAt: null,
+              answers: payloadAnswersResult.value,
+            }
+          })
         const isFinished = nextQuestions.every((question) => question.status === 'answered')
 
         return updateStudySessionForUser(
@@ -198,21 +208,25 @@ export function skipStudySessionQuestion(
 
     return fetchLockedQuestionVersionByIdResult(studySessionQuestion.questionVersionId).andThen(
       (payloadQuestionVersion) => {
-        assertLockedQuestionVersionMatchesSessionQuestion(payloadQuestionVersion, studySessionQuestion)
+        assertLockedQuestionVersionMatchesSessionQuestion(
+          payloadQuestionVersion,
+          studySessionQuestion,
+        )
 
-        const nextQuestions = payloadStudySession.questions.map((question, index) => {
-          if (index !== questionIndex) {
-            return question
-          }
+        const nextQuestions: PayloadStudySessionForService['questions'] =
+          payloadStudySession.questions.map((question, index) => {
+            if (index !== questionIndex) {
+              return question
+            }
 
-          return {
-            ...question,
-            status: 'skipped' as const,
-            answeredAt: undefined,
-            skippedAt: nowIso,
-            answers: buildUnansweredPayloadAnswersFromQuestionVersion(payloadQuestionVersion),
-          }
-        })
+            return {
+              ...question,
+              status: 'skipped' as const,
+              answeredAt: undefined,
+              skippedAt: nowIso,
+              answers: buildUnansweredPayloadAnswersFromQuestionVersion(payloadQuestionVersion),
+            }
+          })
 
         return updateStudySessionForUser(
           {
@@ -250,7 +264,8 @@ export function setStudySessionQuestionFlagged(
       },
       options,
     ).map(
-      (payloadStudySession) => parsePayloadStudySession(payloadStudySession).questions[questionIndex],
+      (payloadStudySession) =>
+        parsePayloadStudySession(payloadStudySession).questions[questionIndex],
     )
   })
 }
@@ -270,7 +285,9 @@ function updateStudySessionForUser(
     : updateStudySessionResult(studySession)
 }
 
-function parsePayloadStudySession(payloadStudySession: PayloadStudySessionForService): StudySession {
+function parsePayloadStudySession(
+  payloadStudySession: PayloadStudySessionForService,
+): StudySession {
   const candidate = payloadStudySessionToDomainCandidate(payloadStudySession)
   if (candidate.state !== 'finished') {
     candidate.endedAt = undefined
@@ -290,7 +307,7 @@ function buildPayloadAnswersFromSubmission(
   payloadQuestionVersion: PayloadLockedQuestionVersionForService,
   answers: readonly StudySessionAnswerSubmission[],
 ): Result<
-  PayloadStudySession['questions'][number]['answers'],
+  NonNullable<PayloadStudySession['questions'][number]['answers']>,
   StudySessionQuestionIncompleteAnswerError | StudySessionQuestionInvalidAnswerError
 > {
   const submittedAnswersByPartId = new Map<string, StudySessionAnswerSubmission>()
@@ -309,11 +326,13 @@ function buildPayloadAnswersFromSubmission(
     submittedAnswersByPartId.set(answer.partId, answer)
   }
 
-  const payloadAnswers: PayloadStudySession['questions'][number]['answers'] = []
+  const payloadAnswers: NonNullable<PayloadStudySession['questions'][number]['answers']> = []
 
   for (const part of payloadQuestionVersion.version.parts) {
     if (!part.id) {
-      throw new Error(`Locked question version ${payloadQuestionVersion.id} has a part without an id.`)
+      throw new Error(
+        `Locked question version ${payloadQuestionVersion.id} has a part without an id.`,
+      )
     }
 
     const answer = submittedAnswersByPartId.get(part.id)
@@ -334,7 +353,13 @@ function buildPayloadAnswersFromSubmission(
       )
     }
 
-    const payloadAnswerResult = buildPayloadAnswer(studySessionId, questionIndex, part.id, answer, part)
+    const payloadAnswerResult = buildPayloadAnswer(
+      studySessionId,
+      questionIndex,
+      part.id,
+      answer,
+      part,
+    )
 
     if (payloadAnswerResult.isErr()) {
       return err(payloadAnswerResult.error)
@@ -361,7 +386,13 @@ function buildPayloadAnswersFromSubmission(
   }
 
   if (incompletePartIds.length > 0) {
-    return err(new StudySessionQuestionIncompleteAnswerError(studySessionId, questionIndex, incompletePartIds))
+    return err(
+      new StudySessionQuestionIncompleteAnswerError(
+        studySessionId,
+        questionIndex,
+        incompletePartIds,
+      ),
+    )
   }
 
   return ok(payloadAnswers)
@@ -374,12 +405,14 @@ function buildPayloadAnswer(
   answer: StudySessionAnswerSubmission,
   part: PayloadLockedQuestionVersionForService['version']['parts'][number],
 ): Result<
-  PayloadStudySession['questions'][number]['answers'][number] | undefined,
+  NonNullable<PayloadStudySession['questions'][number]['answers']>[number] | undefined,
   StudySessionQuestionInvalidAnswerError
 > {
   switch (answer.type) {
     case 'multipleChoice': {
-      const choiceIds = new Set((part.response.multipleChoice?.choices ?? []).map((choice) => choice.id))
+      const choiceIds = new Set(
+        (part.response.multipleChoice?.choices ?? []).map((choice) => choice.id),
+      )
       if (!choiceIds.has(answer.choiceId)) {
         return err(
           new StudySessionQuestionInvalidAnswerError(
@@ -425,10 +458,12 @@ function buildPayloadAnswer(
 
 function buildUnansweredPayloadAnswersFromQuestionVersion(
   payloadQuestionVersion: PayloadLockedQuestionVersionForService,
-): PayloadStudySession['questions'][number]['answers'] {
+): NonNullable<PayloadStudySession['questions'][number]['answers']> {
   return payloadQuestionVersion.version.parts.map((part) => {
     if (!part.id) {
-      throw new Error(`Locked question version ${payloadQuestionVersion.id} has a part without an id.`)
+      throw new Error(
+        `Locked question version ${payloadQuestionVersion.id} has a part without an id.`,
+      )
     }
 
     return {

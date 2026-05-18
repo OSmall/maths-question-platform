@@ -18,6 +18,9 @@ const normalizeStudySession: CollectionBeforeValidateHook = async ({ data, opera
   })
 }
 
+const showOnEdit = (_data: unknown, _siblingData: unknown, { operation }: { operation?: string }) =>
+  operation !== 'create'
+
 async function fetchLatestPublishedQuestionVersion(
   req: PayloadRequest,
   questionId: number,
@@ -67,7 +70,7 @@ export const StudySession: CollectionConfig = {
   },
   admin: {
     defaultColumns: ['id', 'user', 'state', 'begunAt', 'endedAt', 'updatedAt'],
-    description: 'Persisted learner study sessions with locked question versions and answers.',
+    description: 'Persisted student study sessions with locked question versions and answers.',
   },
   hooks: {
     beforeValidate: [normalizeStudySession],
@@ -99,6 +102,7 @@ export const StudySession: CollectionConfig = {
         },
       ],
       admin: {
+        condition: showOnEdit,
         readOnly: true,
       },
     },
@@ -109,6 +113,7 @@ export const StudySession: CollectionConfig = {
         date: {
           pickerAppearance: 'dayAndTime',
         },
+        condition: showOnEdit,
         readOnly: true,
       },
     },
@@ -119,6 +124,7 @@ export const StudySession: CollectionConfig = {
         date: {
           pickerAppearance: 'dayAndTime',
         },
+        condition: showOnEdit,
         readOnly: true,
       },
     },
@@ -141,6 +147,7 @@ export const StudySession: CollectionConfig = {
           type: 'text',
           required: true,
           admin: {
+            condition: showOnEdit,
             readOnly: true,
           },
         },
@@ -180,6 +187,7 @@ export const StudySession: CollectionConfig = {
             date: {
               pickerAppearance: 'dayAndTime',
             },
+            condition: showOnEdit,
             readOnly: true,
           },
         },
@@ -190,6 +198,7 @@ export const StudySession: CollectionConfig = {
             date: {
               pickerAppearance: 'dayAndTime',
             },
+            condition: showOnEdit,
             readOnly: true,
           },
         },
@@ -198,6 +207,7 @@ export const StudySession: CollectionConfig = {
           type: 'array',
           required: true,
           admin: {
+            condition: showOnEdit,
             readOnly: true,
           },
           fields: [
@@ -205,6 +215,9 @@ export const StudySession: CollectionConfig = {
               name: 'partId',
               type: 'text',
               required: true,
+              admin: {
+                readOnly: true,
+              },
             },
             {
               name: 'type',

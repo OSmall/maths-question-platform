@@ -335,7 +335,7 @@ export interface Question {
   _status?: ('draft' | 'published') | null;
 }
 /**
- * Persisted learner study sessions with locked question versions and answers.
+ * Persisted student study sessions with locked question versions and answers.
  *
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "studySession".
@@ -343,30 +343,32 @@ export interface Question {
 export interface StudySession {
   id: number;
   user: number | User;
-  state: 'notStarted' | 'started' | 'finished';
+  state?: ('notStarted' | 'started' | 'finished') | null;
   begunAt?: string | null;
   endedAt?: string | null;
   questions: {
     question: number | Question;
-    questionVersionId: string;
+    questionVersionId?: string | null;
     status: 'notStarted' | 'skipped' | 'answered';
     flagged: boolean;
     answeredAt?: string | null;
     skippedAt?: string | null;
-    answers: {
-      partId: string;
-      type: 'unanswered' | 'multipleChoice' | 'shortText' | 'selfReport';
-      multipleChoice?: {
-        choiceId?: string | null;
-      };
-      shortText?: {
-        answer?: string | null;
-      };
-      selfReport?: {
-        answer?: boolean | null;
-      };
-      id?: string | null;
-    }[];
+    answers?:
+      | {
+          partId: string;
+          type: 'unanswered' | 'multipleChoice' | 'shortText' | 'selfReport';
+          multipleChoice?: {
+            choiceId?: string | null;
+          };
+          shortText?: {
+            answer?: string | null;
+          };
+          selfReport?: {
+            answer?: boolean | null;
+          };
+          id?: string | null;
+        }[]
+      | null;
     id?: string | null;
   }[];
   updatedAt: string;
