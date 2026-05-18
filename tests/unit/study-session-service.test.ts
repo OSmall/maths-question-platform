@@ -57,6 +57,7 @@ describe('study session service', () => {
       version: 'version-10',
       shuffleKeyBase: '123:0:10',
     })
+    expect(result.value.session.questionCount).toBe(1)
     expect(result.value.questionSubmissionEvaluation).toEqual({
       isEvaluated: false,
       answeredParts: 0,

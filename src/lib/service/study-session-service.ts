@@ -99,6 +99,7 @@ export function getStudySessionQuestionByIndex(
               state: studySession.state,
               begunAt: studySession.begunAt,
               endedAt: studySession.endedAt,
+              questionCount: studySession.questions.length,
             },
             studySessionQuestion,
             question,

@@ -313,7 +313,7 @@ Verification target:
 
 ### Stage 8: StudySession Route
 
-Status: Pending
+Status: Completed
 
 - Add `/study-session/[studySessionId]/question/[questionIndex]/page.tsx`.
 - Treat `questionIndex` in the URL as a one-based question number; convert to zero-based before calling services.
@@ -336,6 +336,34 @@ Verification target:
 - `bun run test:unit`
 - `bun run build`
 - `bun run test:e2e` if stable test data exists or is added.
+
+Behavior implemented:
+
+- Added `/study-session/[studySessionId]/question/[questionIndex]/page.tsx`.
+- Treats route `questionIndex` as one-based and converts to zero-based before service access.
+- Invalid non-numeric, zero, or negative route params call `notFound()` before service access.
+- Requires `student` role and uses user-scoped StudySession service loading.
+- Maps missing sessions, out-of-range question indexes, and non-renderable locked versions to `notFound()`.
+- Renders owned `notStarted` sessions as a simple unsupported route-level message.
+- Never uses draft mode.
+- Uses the service-derived `shuffleKeyBase` based on `studySessionId`, zero-based question index, and canonical question ID.
+- Passes persisted session timing into the shared timer, freezing when `endedAt` is present.
+- Disables Skip after answered questions while keeping the question-level Flag available.
+- Keeps answered and finished sessions viewable in review mode without redirecting to a summary route.
+- Keeps skipped questions editable when revisited and leaves Skip available.
+- Added a persisted StudySession flag button with SWR optimistic state backed by the StudySession flag server action.
+- Added `session.questionCount` to the StudySession render service result so Continue can be a Next `<Link>` when a next question exists.
+
+Verification completed:
+
+- `bun run lint` passed with existing warnings.
+- `bun run typecheck` passed.
+- `bun run test:unit` passed.
+- `bun run build` passed with existing warnings.
+
+Notes:
+
+- `bun run test:e2e` was not run because no stable StudySession route test data was added in this stage.
 
 ### Stage 9: Preview Route Update
 

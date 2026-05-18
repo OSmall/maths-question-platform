@@ -14,6 +14,14 @@ import type {
   RenderableQuestionSubmissionEvaluation,
 } from '@/lib/domain/question'
 
+type QuestionControlConfig = {
+  disabled?: boolean
+}
+
+type QuestionContinueConfig = QuestionControlConfig & {
+  href?: string
+}
+
 type QuestionRouteField = {
   name: string
   value: number | string
@@ -32,6 +40,11 @@ type QuestionRendererProps = {
   isDraftMode: boolean
   question: RenderableQuestion
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
+  controls?: {
+    continue?: QuestionContinueConfig
+    skip?: QuestionControlConfig
+    submit?: QuestionControlConfig
+  }
   routeFields?: QuestionRouteField[]
   timer?: {
     begunAt?: string
@@ -40,6 +53,7 @@ type QuestionRendererProps = {
 }
 
 export const QuestionRenderer = ({
+  controls,
   flagControl,
   isDraftMode,
   question,
@@ -162,6 +176,7 @@ export const QuestionRenderer = ({
             </article>
 
             <QuestionActionBar
+              controls={controls}
               flagControl={flagControl}
               question={question}
               questionSubmissionEvaluation={questionSubmissionEvaluation}

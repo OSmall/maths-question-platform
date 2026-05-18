@@ -14,6 +14,20 @@ type PreviewQuestionFlagButtonProps = {
   initialFlagged: boolean
 }
 
+type StudySessionQuestionFlagButtonProps = {
+  initialFlagged: boolean
+  questionNumber: number
+  setFlaggedAction: (input: {
+    flagged: boolean
+    questionNumber: number
+    studySessionId: number
+  }) => Promise<{
+    data?: { flagged: boolean } | { message: string; status: 'error' }
+    serverError?: string
+  } | void>
+  studySessionId: number
+}
+
 export function PreviewQuestionFlagButton({ initialFlagged }: PreviewQuestionFlagButtonProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -45,6 +59,66 @@ export function PreviewQuestionFlagButton({ initialFlagged }: PreviewQuestionFla
 
             const queryString = nextSearchParams.toString()
             router.replace(queryString ? `${pathname}?${queryString}` : pathname)
+
+            return { flagged: nextFlagged }
+          },
+          {
+            optimisticData: { flagged: nextFlagged },
+            populateCache: true,
+            revalidate: false,
+            rollbackOnError: true,
+          },
+        )
+      }}
+      type="button"
+      variant={flagged ? 'secondary' : 'outline'}
+    >
+      <Flag data-icon="inline-start" className={flagged ? 'fill-current' : undefined} />
+      {flagged ? 'Flagged' : 'Flag'}
+    </Button>
+  )
+}
+
+export function StudySessionQuestionFlagButton({
+  initialFlagged,
+  questionNumber,
+  setFlaggedAction,
+  studySessionId,
+}: StudySessionQuestionFlagButtonProps) {
+  const cacheKey = `study-session-question-flag:${studySessionId}:${questionNumber}`
+  const { data, mutate, isValidating } = useSWR<FlagState>(cacheKey, null, {
+    fallbackData: { flagged: initialFlagged },
+    revalidateOnFocus: false,
+    revalidateOnReconnect: false,
+  })
+  const flagged = data?.flagged ?? initialFlagged
+
+  return (
+    <Button
+      aria-pressed={flagged}
+      disabled={isValidating}
+      onClick={() => {
+        const nextFlagged = !flagged
+
+        void mutate(
+          async () => {
+            const result = await setFlaggedAction({
+              flagged: nextFlagged,
+              questionNumber,
+              studySessionId,
+            })
+
+            if (result?.serverError) {
+              throw new Error(result.serverError)
+            }
+
+            if (result?.data && 'status' in result.data && result.data.status === 'error') {
+              throw new Error(result.data.message)
+            }
+
+            if (result?.data && 'flagged' in result.data) {
+              return { flagged: result.data.flagged }
+            }
 
             return { flagged: nextFlagged }
           },

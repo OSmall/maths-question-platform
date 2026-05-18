@@ -115,7 +115,9 @@ export type StudySessionQuestion = z.infer<typeof studySessionQuestionSchema>
 export type StudySession = z.infer<typeof studySessionSchema>
 
 export type StudySessionQuestionRender = {
-  session: Pick<StudySession, 'begunAt' | 'endedAt' | 'id' | 'state'>
+  session: Pick<StudySession, 'begunAt' | 'endedAt' | 'id' | 'state'> & {
+    questionCount: number
+  }
   studySessionQuestion: StudySessionQuestion
   question: RenderableQuestion
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
