@@ -38,25 +38,30 @@ export default async function QuestionPage({
 
   await requireRole(buildQuestionPath(id, resolvedSearchParams), USER_ROLES.admin)
 
-  const seed = getSingleSearchParam(resolvedSearchParams.seed)
+  const previewStudySessionId = getSingleSearchParam(resolvedSearchParams.previewStudySessionId)
   const isFlagged = getSingleSearchParam(resolvedSearchParams.flagged) === '1'
   const isSubmitted = getSingleSearchParam(resolvedSearchParams.submitted) === '1'
-  if (!seed) {
-    const seededSearchParams = new URLSearchParams()
+  if (!previewStudySessionId || getSingleSearchParam(resolvedSearchParams.seed)) {
+    const previewSearchParams = new URLSearchParams()
 
     for (const [key, value] of Object.entries(resolvedSearchParams)) {
       if (Array.isArray(value)) {
-        value.forEach((entry) => seededSearchParams.append(key, entry))
+        value.forEach((entry) => previewSearchParams.append(key, entry))
       } else if (value != null) {
-        seededSearchParams.set(key, value)
+        previewSearchParams.set(key, value)
       }
     }
 
-    seededSearchParams.set('seed', crypto.randomUUID())
-    redirect(`/question/${id}?${seededSearchParams.toString()}`)
+    previewSearchParams.delete('seed')
+    previewSearchParams.set('previewStudySessionId', previewStudySessionId ?? crypto.randomUUID())
+    redirect(`/question/${id}?${previewSearchParams.toString()}`)
   }
 
-  const questionResult = await getQuestionById(questionId, { draft: isDraftMode, shuffleKeyBase: seed })
+  const shuffleKeyBase = `${previewStudySessionId}:0:${questionId}`
+  const questionResult = await getQuestionById(questionId, {
+    draft: isDraftMode,
+    shuffleKeyBase,
+  })
   const questionSubmissionEvaluationResult = await getQuestionSubmissionEvaluation(
     questionId,
     resolvedSearchParams,
@@ -75,10 +80,11 @@ export default async function QuestionPage({
             questionSubmissionEvaluation={questionSubmissionEvaluation}
             routeFields={[
               { name: 'questionId', value: question.id },
-              { name: 'seed', value: question.shuffleKeyBase },
+              { name: 'previewStudySessionId', value: previewStudySessionId },
+              ...(isFlagged ? [{ name: 'flagged', value: '1' }] : []),
             ]}
             submitAction={submitQuestionAnswersAction}
-            timer={{ begunAt: isSubmitted ? undefined : new Date().toISOString() }}
+            timer={buildPreviewTimer(isSubmitted)}
           />
         </div>
       </div>
@@ -102,6 +108,11 @@ export default async function QuestionPage({
       notFound()
     },
   )
+}
+
+function buildPreviewTimer(isSubmitted: boolean) {
+  const now = new Date().toISOString()
+  return isSubmitted ? { begunAt: now, endedAt: now } : { begunAt: now }
 }
 
 function buildQuestionPath(id: string, searchParams: Record<string, string | string[] | undefined>) {

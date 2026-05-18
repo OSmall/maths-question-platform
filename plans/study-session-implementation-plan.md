@@ -367,7 +367,7 @@ Notes:
 
 ### Stage 9: Preview Route Update
 
-Status: Pending
+Status: Completed
 
 - Replace `seed` with `previewStudySessionId`.
 - Redirect `/question/[id]` to add `previewStudySessionId` when missing.
@@ -391,6 +391,30 @@ Verification target:
 - `bun run test:unit`
 - `bun run build`
 - `bun run test:e2e` if stable test data exists or is added.
+
+Behavior implemented:
+
+- Replaced preview-route `seed` form/action state with `previewStudySessionId`.
+- `/question/[id]` redirects to add `previewStudySessionId` when missing.
+- Legacy `seed` query params are removed during the canonical redirect.
+- Submitted preview review URLs preserve `previewStudySessionId` and URL-backed answers.
+- Preview review URLs preserve `flagged=1` when the question is flagged at submit time.
+- Preview route derives internal `shuffleKeyBase` as `previewStudySessionId:0:questionId`.
+- Preview form payload now includes `previewStudySessionId`; the derived shuffle key is not submitted.
+- Preview state remains URL-backed with `previewStudySessionId`, optional `submitted=1`, optional `flagged=1`, and `a.<partId>=...` answer params.
+- Preview uses synthetic session timing: ticking while started, frozen when submitted/reviewed.
+- Preview Continue remains disabled/no-op because the preview has only internal question index `0`.
+
+Verification completed:
+
+- `bun run lint` passed with existing warnings.
+- `bun run typecheck` passed.
+- `bun run test:unit` passed.
+- `bun run build` passed with existing warnings.
+
+Notes:
+
+- `bun run test:e2e` was not run because no stable preview-route e2e test data was added in this stage.
 
 ### Stage 10: SWR And Sonner
 

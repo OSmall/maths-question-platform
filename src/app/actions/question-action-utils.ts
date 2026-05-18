@@ -11,7 +11,8 @@ const answerRowSchema = z.object({
 const submittedQuestionPayloadSchema = z.object({
   rows: z.array(answerRowSchema),
   questionId: z.number().int().positive(),
-  seed: z.string().min(1),
+  previewStudySessionId: z.string().min(1),
+  flagged: z.boolean(),
 }).transform(({ rows, ...payload }) => ({
   ...payload,
   answers: Object.fromEntries(rows.map((row) => [row.partId, row.value])),
@@ -21,9 +22,10 @@ export const submittedQuestionFormSchema = z
   .instanceof(FormData)
   .transform((formData) => {
     return {
+      flagged: formData.get('flagged') === '1',
       questionId: Number(formData.get('questionId')),
+      previewStudySessionId: String(formData.get('previewStudySessionId') ?? ''),
       rows: parseAnswerRows(formData),
-      seed: String(formData.get('seed') ?? ''),
     }
   })
   .pipe(submittedQuestionPayloadSchema)
@@ -34,13 +36,18 @@ export function parseSubmittedQuestionFormData(formData: FormData) {
 
 export function buildQuestionReviewPath(
   questionId: number,
-  seed: string,
+  previewStudySessionId: string,
   answers: Record<string, string>,
+  options: { flagged?: boolean } = {},
 ) {
   const searchParams = new URLSearchParams({
-    seed,
+    previewStudySessionId,
     submitted: '1',
   })
+
+  if (options.flagged) {
+    searchParams.set('flagged', '1')
+  }
 
   for (const [partId, answer] of Object.entries(answers)) {
     searchParams.set(`a.${partId}`, answer)

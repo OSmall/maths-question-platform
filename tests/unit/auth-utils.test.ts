@@ -18,7 +18,9 @@ describe('auth utilities', () => {
   })
 
   it('uses a safe requested redirect first', () => {
-    expect(getAuthenticatedRedirectPath('/question/12?seed=abc')).toBe('/question/12?seed=abc')
+    expect(getAuthenticatedRedirectPath('/question/12?previewStudySessionId=abc')).toBe(
+      '/question/12?previewStudySessionId=abc',
+    )
   })
 
   it('falls back to home without a safe requested redirect', () => {
