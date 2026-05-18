@@ -81,7 +81,7 @@ export const QuestionActionBar = ({
 function ContinueControl({ config }: { config?: QuestionContinueConfig }) {
   if (config?.href && !config.disabled) {
     return (
-      <Button render={<Link href={config.href} />}>
+      <Button render={<Link href={config.href} />} nativeButton={false}>
         <ArrowRight data-icon="inline-start" />
         Continue
       </Button>
