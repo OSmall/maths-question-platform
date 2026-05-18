@@ -1,7 +1,9 @@
 import { expect, test } from './test'
+import type { Page } from '@playwright/test'
 import { getPayload } from 'payload'
 
 import { USER_ROLES, type UserRole } from '@/lib/auth/roles'
+import type { Question, User } from '@/payload/payload-types'
 
 const adminEmail = 'e2e-admin@example.com'
 const studentEmail = 'e2e-student@example.com'
@@ -114,4 +116,164 @@ test.describe('Frontend', () => {
 
     await expect(page.getByRole('heading', { name: 'Question Not Found' })).toBeVisible()
   })
+
+  test('persists study session flag changes after reload', async ({ page }) => {
+    const student = await createUser({ password, roles: [USER_ROLES.student] })
+    const { session } = await createStudySessionFixture(student)
+
+    await page.goto('/login')
+    await page.getByLabel('Email').fill(student.email)
+    await page.getByLabel('Password').fill(password)
+    await page.getByRole('button', { name: 'Sign in' }).click()
+
+    await expect(page).toHaveURL('/')
+
+    await page.goto(`/study-session/${session.id}/question/1`)
+    await expect(page.getByRole('button', { name: 'Flag' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+
+    const flagResponsePromise = waitForStudySessionActionResponse(page, session.id)
+    await page.getByRole('button', { name: 'Flag' }).click()
+    await expect(page.getByRole('button', { name: 'Flagged' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+    expect((await flagResponsePromise).ok()).toBe(true)
+
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Flagged' })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    )
+
+    const unflagResponsePromise = waitForStudySessionActionResponse(page, session.id)
+    await page.getByRole('button', { name: 'Flagged' }).click()
+    await expect(page.getByRole('button', { name: 'Flag' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+    expect((await unflagResponsePromise).ok()).toBe(true)
+
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Flag' })).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    )
+  })
 })
+
+function waitForStudySessionActionResponse(page: Page, sessionId: number) {
+  return page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().includes(`/study-session/${sessionId}/question/1`),
+  )
+}
+
+async function createStudySessionFixture(user: User) {
+  const payload = await getPayloadInstance()
+  const question = await createPublishedQuestion()
+  const session = await payload.create({
+    collection: 'studySession',
+    data: {
+      state: 'started',
+      user: user.id,
+      questions: [
+        {
+          question: question.id,
+          questionVersionId: 'pending-lock',
+          status: 'notStarted',
+          flagged: false,
+          answers: [{ partId: 'pending-lock', type: 'unanswered' }],
+        },
+      ],
+    },
+    depth: 0,
+    draft: false,
+  })
+
+  return { question, session }
+}
+
+async function createUser({ password, roles }: { password: string; roles: UserRole[] }) {
+  const payload = await getPayloadInstance()
+  const email = `e2e-student-${crypto.randomUUID()}@example.com`
+
+  return payload.create({
+    collection: 'users',
+    data: {
+      email,
+      password,
+      roles,
+    },
+    depth: 0,
+  }) as Promise<User>
+}
+
+async function createPublishedQuestion() {
+  const payload = await getPayloadInstance()
+  const idSuffix = crypto.randomUUID()
+
+  return payload.create({
+    collection: 'question',
+    data: {
+      prompt: nonEmptyRichText,
+      parts: [
+        {
+          id: `mc-part-${idSuffix}`,
+          prompt: nonEmptyRichText,
+          response: {
+            type: 'multipleChoice',
+            multipleChoice: {
+              choices: [
+                { id: `mc-a-${idSuffix}`, text: '3', isCorrect: false },
+                { id: `mc-b-${idSuffix}`, text: '4', isCorrect: true },
+              ],
+              shuffle: false,
+            },
+          },
+        },
+      ],
+      _status: 'published',
+    },
+    depth: 0,
+  })
+}
+
+async function getPayloadInstance() {
+  const { default: config } = await import('@payload-config')
+
+  return getPayload({ config })
+}
+
+const nonEmptyRichText = {
+  root: {
+    type: 'root',
+    children: [
+      {
+        type: 'paragraph',
+        version: 1,
+        children: [
+          {
+            type: 'text',
+            version: 1,
+            text: 'Prompt text',
+            detail: 0,
+            format: 0,
+            mode: 'normal',
+            style: '',
+          },
+        ],
+        direction: 'ltr',
+        format: '',
+        indent: 0,
+      },
+    ],
+    direction: 'ltr',
+    format: '',
+    indent: 0,
+    version: 1,
+  },
+} satisfies NonNullable<Question['prompt']>

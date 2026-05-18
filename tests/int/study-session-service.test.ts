@@ -299,19 +299,33 @@ describe('study session service integration', () => {
     const { session } = await createStudySessionFixture([{ kind: 'multipleChoice' }])
 
     const flaggedResult = await setStudySessionQuestionFlagged(session.id, 0, true)
-    const unflaggedResult = await setStudySessionQuestionFlagged(session.id, 0, false)
 
     expect(flaggedResult.isOk()).toBe(true)
-    expect(unflaggedResult.isOk()).toBe(true)
     if (flaggedResult.isErr()) {
       throw flaggedResult.error
     }
+
+    const flaggedReloadResult = await getStudySessionQuestionByIndex(session.id, 0)
+    if (flaggedReloadResult.isErr()) {
+      throw flaggedReloadResult.error
+    }
+
+    const unflaggedResult = await setStudySessionQuestionFlagged(session.id, 0, false)
+
+    expect(unflaggedResult.isOk()).toBe(true)
     if (unflaggedResult.isErr()) {
       throw unflaggedResult.error
     }
 
+    const unflaggedReloadResult = await getStudySessionQuestionByIndex(session.id, 0)
+    if (unflaggedReloadResult.isErr()) {
+      throw unflaggedReloadResult.error
+    }
+
     expect(flaggedResult.value.flagged).toBe(true)
+    expect(flaggedReloadResult.value.studySessionQuestion.flagged).toBe(true)
     expect(unflaggedResult.value.flagged).toBe(false)
+    expect(unflaggedReloadResult.value.studySessionQuestion.flagged).toBe(false)
   }, 60_000)
 
   it('enforces owner access when a user is supplied', async () => {
