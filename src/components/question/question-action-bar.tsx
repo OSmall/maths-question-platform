@@ -32,7 +32,7 @@ export const QuestionActionBar = ({
 }: QuestionActionBarProps) => {
   const isSubmitted = questionSubmissionEvaluation.isEvaluated
   return (
-    <div className="sticky bottom-3 z-20">
+    <section aria-label="Question actions" className="sticky bottom-3 z-20">
       <div className="rounded-[1.7rem] border border-border/80 bg-card/92 p-3 shadow-[0_24px_50px_-30px_rgba(15,23,42,0.45)] backdrop-blur-xl dark:bg-card/88 sm:p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="min-w-0">
@@ -74,7 +74,7 @@ export const QuestionActionBar = ({
           </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }
 

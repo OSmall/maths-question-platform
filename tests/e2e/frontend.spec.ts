@@ -8,6 +8,7 @@ import type { Question, User } from '@/payload/payload-types'
 const adminEmail = 'e2e-admin@example.com'
 const studentEmail = 'e2e-student@example.com'
 const password = 'Payload-e2e-password-14'
+type QuestionKind = 'multipleChoice' | 'shortText'
 
 test.beforeAll(async () => {
   const { config: loadEnv } = await import('dotenv')
@@ -64,6 +65,7 @@ test.describe('Frontend', () => {
     await expect(heading).toHaveText('Welcome to your new project.')
     await expect(page.getByRole('link', { name: 'Login' })).toBeVisible()
     await expect(page.getByRole('link', { name: 'Admin' })).toBeHidden()
+    await expect(page).toHaveScreenshot('homepage.png', { fullPage: true })
   })
 
   test('shows failed login feedback', async ({ page }) => {
@@ -162,6 +164,87 @@ test.describe('Frontend', () => {
       'false',
     )
   })
+
+  test('submits a study session answer and shows the persisted review state', async ({ page }) => {
+    const student = await createUser({ password, roles: [USER_ROLES.student] })
+    const { session } = await createStudySessionFixture(student)
+
+    await loginAs(page, student.email)
+    await page.goto(`/study-session/${session.id}/question/1`)
+
+    await expect(page.getByRole('button', { name: 'Check answer' })).toBeVisible()
+    await prepareStableVisualViewport(page)
+    await expect(page.getByRole('region', { name: 'Question actions' })).toHaveScreenshot(
+      'study-session-action-bar-unanswered.png',
+    )
+
+    await page.getByLabel('4').check()
+    const submitResponsePromise = waitForStudySessionActionResponse(page, session.id)
+    await page.getByRole('button', { name: 'Check answer' }).click()
+    expect((await submitResponsePromise).status()).toBeLessThan(400)
+
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible()
+    await expect(page.getByText('Review mode is a read-only snapshot')).toBeVisible()
+    await stabilizeStudySessionTimer(session.id)
+    await page.reload()
+    await expect(page.getByRole('button', { name: 'Continue' })).toBeVisible()
+    await prepareStableVisualViewport(page)
+    await expect(page).toHaveScreenshot('study-session-question-review-page.png', { fullPage: true })
+    await expect(page.getByRole('region', { name: 'Question actions' })).toHaveScreenshot(
+      'study-session-action-bar-answered.png',
+    )
+  })
+
+  test('skips a study session question and persists the skipped state', async ({ page }) => {
+    const student = await createUser({ password, roles: [USER_ROLES.student] })
+    const { session } = await createStudySessionFixture(student, ['multipleChoice', 'shortText'])
+
+    await loginAs(page, student.email)
+    await page.goto(`/study-session/${session.id}/question/1`)
+
+    const skipResponsePromise = waitForStudySessionActionResponse(page, session.id)
+    await page.getByRole('button', { name: 'Skip' }).click()
+    expect((await skipResponsePromise).status()).toBeLessThan(400)
+
+    await expect(page).toHaveURL(new RegExp(`/study-session/${session.id}/question/2$`))
+    await expect(page.getByRole('heading', { name: 'Question 2' })).toBeVisible()
+
+    const payload = await getPayloadInstance()
+    const reloadedSession = await payload.findByID({
+      collection: 'studySession',
+      id: session.id,
+      depth: 0,
+    })
+    expect(reloadedSession.questions[0]?.status).toBe('skipped')
+    expect(reloadedSession.questions[0]?.skippedAt).toEqual(expect.any(String))
+  })
+
+  test('returns not found when a student opens another student study session', async ({ page }) => {
+    const owner = await createUser({ password, roles: [USER_ROLES.student] })
+    const stranger = await createUser({ password, roles: [USER_ROLES.student] })
+    const { session } = await createStudySessionFixture(owner)
+
+    await loginAs(page, stranger.email)
+    const response = await page.goto(`/study-session/${session.id}/question/1`)
+
+    expect(response?.status()).toBe(404)
+  })
+
+  test('returns not found for invalid study session route parameters', async ({ page }) => {
+    const student = await createUser({ password, roles: [USER_ROLES.student] })
+    const { session } = await createStudySessionFixture(student)
+
+    await loginAs(page, student.email)
+
+    const invalidSessionResponse = await page.goto('/study-session/not-a-number/question/1')
+    expect(invalidSessionResponse?.status()).toBe(404)
+
+    const invalidQuestionResponse = await page.goto(`/study-session/${session.id}/question/nope`)
+    expect(invalidQuestionResponse?.status()).toBe(404)
+
+    const outOfRangeQuestionResponse = await page.goto(`/study-session/${session.id}/question/999`)
+    expect(outOfRangeQuestionResponse?.status()).toBe(404)
+  })
 })
 
 function waitForStudySessionActionResponse(page: Page, sessionId: number) {
@@ -172,29 +255,35 @@ function waitForStudySessionActionResponse(page: Page, sessionId: number) {
   )
 }
 
-async function createStudySessionFixture(user: User) {
+async function createStudySessionFixture(
+  user: User,
+  questionKinds: readonly QuestionKind[] = ['multipleChoice'],
+) {
   const payload = await getPayloadInstance()
-  const question = await createPublishedQuestion()
+  const questions: Question[] = []
+
+  for (const kind of questionKinds) {
+    questions.push(await createPublishedQuestion(kind))
+  }
+
   const session = await payload.create({
     collection: 'studySession',
     data: {
       state: 'started',
       user: user.id,
-      questions: [
-        {
-          question: question.id,
-          questionVersionId: 'pending-lock',
-          status: 'notStarted',
-          flagged: false,
-          answers: [{ partId: 'pending-lock', type: 'unanswered' }],
-        },
-      ],
+      questions: questions.map((question) => ({
+        question: question.id,
+        questionVersionId: 'pending-lock',
+        status: 'notStarted',
+        flagged: false,
+        answers: [{ partId: 'pending-lock', type: 'unanswered' }],
+      })),
     },
     depth: 0,
     draft: false,
   })
 
-  return { question, session }
+  return { questions, session }
 }
 
 async function createUser({ password, roles }: { password: string; roles: UserRole[] }) {
@@ -212,7 +301,7 @@ async function createUser({ password, roles }: { password: string; roles: UserRo
   }) as Promise<User>
 }
 
-async function createPublishedQuestion() {
+async function createPublishedQuestion(kind: QuestionKind) {
   const payload = await getPayloadInstance()
   const idSuffix = crypto.randomUUID()
 
@@ -220,23 +309,65 @@ async function createPublishedQuestion() {
     collection: 'question',
     data: {
       prompt: nonEmptyRichText,
-      parts: [
-        {
-          id: `mc-part-${idSuffix}`,
-          prompt: nonEmptyRichText,
-          response: {
-            type: 'multipleChoice',
-            multipleChoice: {
-              choices: [
-                { id: `mc-a-${idSuffix}`, text: '3', isCorrect: false },
-                { id: `mc-b-${idSuffix}`, text: '4', isCorrect: true },
-              ],
-              shuffle: false,
-            },
-          },
-        },
-      ],
+      parts: [createQuestionPart(kind, idSuffix)],
       _status: 'published',
+    },
+    depth: 0,
+  })
+}
+
+function createQuestionPart(kind: QuestionKind, idSuffix: string): Question['parts'][number] {
+  if (kind === 'shortText') {
+    return {
+      id: `short-part-${idSuffix}`,
+      prompt: nonEmptyRichText,
+      response: {
+        type: 'shortText',
+        shortText: {
+          acceptedAnswers: [{ value: '42' }],
+        },
+      },
+    }
+  }
+
+  return {
+    id: `mc-part-${idSuffix}`,
+    prompt: nonEmptyRichText,
+    response: {
+      type: 'multipleChoice',
+      multipleChoice: {
+        choices: [
+          { id: `mc-a-${idSuffix}`, text: '3', isCorrect: false },
+          { id: `mc-b-${idSuffix}`, text: '4', isCorrect: true },
+        ],
+        shuffle: false,
+      },
+    },
+  }
+}
+
+async function loginAs(page: Page, email: string) {
+  await page.goto('/login')
+  await page.getByLabel('Email').fill(email)
+  await page.getByLabel('Password').fill(password)
+  await page.getByRole('button', { name: 'Sign in' }).click()
+  await expect(page).toHaveURL('/')
+}
+
+async function prepareStableVisualViewport(page: Page) {
+  await page.setViewportSize({ height: 1100, width: 1000 })
+  await page.evaluate(() => window.scrollTo(0, 0))
+}
+
+async function stabilizeStudySessionTimer(sessionId: number) {
+  const payload = await getPayloadInstance()
+
+  await payload.update({
+    collection: 'studySession',
+    id: sessionId,
+    data: {
+      begunAt: '2026-05-04T10:00:00.000Z',
+      endedAt: '2026-05-04T10:02:00.000Z',
     },
     depth: 0,
   })

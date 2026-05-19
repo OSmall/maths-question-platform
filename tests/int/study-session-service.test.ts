@@ -24,6 +24,20 @@ import config from '@payload-config'
 type QuestionKind = 'multipleChoice' | 'selfReport' | 'shortText'
 
 describe('study session service integration', () => {
+  it('documents the current serial numeric ID shape for Payload records used by study sessions', async () => {
+    const { questions, session, user } = await createStudySessionFixture([{ kind: 'multipleChoice' }])
+    const question = requireQuestion(questions[0])
+
+    expect(typeof user.id).toBe('number')
+    expect(user.id).toBeGreaterThan(0)
+    expect(typeof question.id).toBe('number')
+    expect(question.id).toBeGreaterThan(0)
+    expect(typeof session.id).toBe('number')
+    expect(session.id).toBeGreaterThan(0)
+    expect(typeof session.questions[0]?.question).toBe('number')
+    expect(session.questions[0]?.question).toBe(question.id)
+  }, 60_000)
+
   it('confirms Payload returns locked question versions with documented parent and part data shape', async () => {
     const payload = await getPayload({ config })
     const { questions, session } = await createStudySessionFixture([{ kind: 'multipleChoice' }])
@@ -348,6 +362,30 @@ describe('study session service integration', () => {
       strangerResult.error instanceof NotFoundError ||
         strangerResult.error instanceof PayloadQueryError,
     ).toBe(true)
+  }, 60_000)
+
+  it('does not mutate a session when a non-owner attempts a flag update', async () => {
+    const owner = await createUser([USER_ROLES.student])
+    const stranger = await createUser([USER_ROLES.student])
+    const { session } = await createStudySessionFixture([{ kind: 'multipleChoice' }], {
+      user: owner,
+    })
+
+    const strangerResult = await setStudySessionQuestionFlagged(session.id, 0, true, {
+      user: stranger,
+    })
+    const ownerReloadResult = await getStudySessionQuestionByIndex(session.id, 0, { user: owner })
+
+    expect(strangerResult.isErr()).toBe(true)
+    if (strangerResult.isOk()) {
+      throw new Error('Expected non-owner flag update to fail')
+    }
+
+    expect(ownerReloadResult.isOk()).toBe(true)
+    if (ownerReloadResult.isErr()) {
+      throw ownerReloadResult.error
+    }
+    expect(ownerReloadResult.value.studySessionQuestion.flagged).toBe(false)
   }, 60_000)
 
   it('rejects get, submit, skip, and flag operations for out-of-range indexes', async () => {

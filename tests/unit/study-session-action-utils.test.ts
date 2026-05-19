@@ -60,6 +60,46 @@ describe('study session action utils', () => {
     })
   })
 
+  it('rejects missing StudySession identity fields from form data', () => {
+    const missingSessionId = new FormData()
+    missingSessionId.set('questionNumber', '2')
+
+    const missingQuestionNumber = new FormData()
+    missingQuestionNumber.set('studySessionId', '123')
+
+    expect(() => parseStudySessionQuestionFormData(missingSessionId)).toThrow()
+    expect(() => parseStudySessionQuestionFormData(missingQuestionNumber)).toThrow()
+  })
+
+  it('rejects invalid numeric StudySession identity fields from form data', () => {
+    for (const studySessionId of ['not-a-number', '1.5', '0', '-1']) {
+      const formData = new FormData()
+      formData.set('studySessionId', studySessionId)
+      formData.set('questionNumber', '2')
+
+      expect(() => parseStudySessionQuestionFormData(formData)).toThrow()
+    }
+
+    for (const questionNumber of ['not-a-number', '1.5', '0', '-1']) {
+      const formData = new FormData()
+      formData.set('studySessionId', '123')
+      formData.set('questionNumber', questionNumber)
+
+      expect(() => parseStudySessionQuestionFormData(formData)).toThrow()
+    }
+  })
+
+  it('rejects invalid StudySession identity fields from submitted answer form data', () => {
+    const formData = new FormData()
+    formData.set('studySessionId', 'not-a-number')
+    formData.set('questionNumber', '2')
+    formData.set('answers.0.partId', 'part-1')
+    formData.set('answers.0.type', 'multipleChoice')
+    formData.set('answers.0.value', 'choice-a')
+
+    expect(() => parseSubmittedStudySessionQuestionFormData(formData)).toThrow()
+  })
+
   it('builds one-based StudySession question paths and converts to zero-based indexes', () => {
     expect(buildStudySessionQuestionPath(123, 1)).toBe('/study-session/123/question/1')
     expect(buildStudySessionQuestionPath(123, 2)).toBe('/study-session/123/question/2')
