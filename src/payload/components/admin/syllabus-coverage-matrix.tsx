@@ -34,17 +34,12 @@ const controlOptions: Array<{ label: string; value: SyllabusCoverageStatus }> = 
 
 export function SyllabusCoverageMatrix(props: Props) {
   const [coverageState, setCoverageState] = useState<CoverageStateRecord>(
-    props.initialCoverageState,
+    () => props.initialCoverageState,
   )
   const [baselineState, setBaselineState] = useState<CoverageStateRecord>(
-    props.initialCoverageState,
+    () => props.initialCoverageState,
   )
   const [collapsedTopicIds, setCollapsedTopicIds] = useState<Set<number>>(new Set())
-
-  useEffect(() => {
-    setCoverageState(props.initialCoverageState)
-    setBaselineState(props.initialCoverageState)
-  }, [props.initialCoverageState])
 
   const changedCells = useMemo(
     () =>

@@ -1,5 +1,5 @@
 import { hasText } from '@payloadcms/richtext-lexical/shared'
-import type { CollectionConfig, Field, Validate } from 'payload'
+import type { CollectionConfig, Field, RichTextFieldValidation } from 'payload'
 
 import { adminOnly } from '@/payload/access'
 
@@ -36,20 +36,22 @@ function getPartCount(data: unknown) {
   return data.parts.length
 }
 
-const validateTopLevelPrompt: Validate<RichTextValue> = (value, { data }) => {
+const richTextHasText = (value: object | null | undefined) => hasText(value as RichTextValue)
+
+const validateTopLevelPrompt: RichTextFieldValidation = (value, { data }) => {
   const partCount = getPartCount(data)
 
-  if (partCount === 1 && !hasText(value)) {
+  if (partCount === 1 && !richTextHasText(value)) {
     return 'Single-part questions must use the top-level prompt.'
   }
 
   return true
 }
 
-const validatePartPrompt: Validate<RichTextValue> = (value, { data }) => {
+const validatePartPrompt: RichTextFieldValidation = (value, { data }) => {
   const partCount = getPartCount(data)
 
-  if (partCount > 1 && !hasText(value)) {
+  if (partCount > 1 && !richTextHasText(value)) {
     return 'Multipart questions require a prompt for every part.'
   }
 
