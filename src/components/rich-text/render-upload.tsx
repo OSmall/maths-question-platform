@@ -35,6 +35,7 @@ export const RenderUpload = ({ node }: RenderUploadProps) => {
           sizes="(min-width: 1024px) 768px, 100vw"
           src={url}
           width={width}
+          loading="eager"
         />
       </figure>
     )
