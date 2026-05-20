@@ -4,6 +4,8 @@
 
 This is separate from the default test stack. Unit, integration, and E2E tests remain self-contained. The smoke test is for migration rehearsals and Neon branch validation.
 
+For the full UUID production cutover flow, see [`docs/payload-uuid-cutover.md`](payload-uuid-cutover.md).
+
 ## When To Run
 
 Run the smoke test when changing Payload collections, Payload migrations, database adapter settings, relationship fields, upload tables, or ID strategy.

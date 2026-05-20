@@ -26,7 +26,8 @@ APP_ENV=integration-test  # PGlite-backed integration tests
 ```
 
 For real Neon/Payload migration validation, use the on-demand smoke test documented in
-[`docs/payload-smoke-tests.md`](docs/payload-smoke-tests.md).
+[`docs/payload-smoke-tests.md`](docs/payload-smoke-tests.md). Temporary UUID cutover notes live in
+[`docs/payload-uuid-cutover.md`](docs/payload-uuid-cutover.md).
 
 For local development, pull Vercel-managed variables into `.env.local`:
 

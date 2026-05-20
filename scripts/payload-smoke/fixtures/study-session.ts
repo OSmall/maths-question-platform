@@ -1,4 +1,5 @@
 import { getStudySessionQuestionByIndex, skipStudySessionQuestion } from '@/lib/service/study-session-service'
+import { parseUUID } from '@/lib/domain/uuid'
 
 import { assertEqual, assertPayloadId, assertRecord, assertRelationshipResolves } from '../assertions'
 import type { SmokeFixture, SmokeId } from '../types'
@@ -53,16 +54,13 @@ export const studySessionFixture: SmokeFixture = {
       },
     })
 
-    if (typeof studySession.id !== 'number') {
-      throw new Error('Study session service smoke path still expects numeric IDs.')
-    }
-
-    const loaded = await getStudySessionQuestionByIndex(studySession.id, 0)
+    const studySessionId = parseUUID(studySession.id)
+    const loaded = await getStudySessionQuestionByIndex(studySessionId, 0)
     if (loaded.isErr()) {
       throw loaded.error
     }
 
-    const skipped = await skipStudySessionQuestion(studySession.id, 0)
+    const skipped = await skipStudySessionQuestion(studySessionId, 0)
     if (skipped.isErr()) {
       throw skipped.error
     }
