@@ -7,7 +7,12 @@ import type { Migration } from 'payload'
 const host = '127.0.0.1'
 const port = await getAvailablePort()
 const database = await PGlite.create('memory://maths-question-platform-int')
-const server = new PGLiteSocketServer({ db: database, host, port })
+const server = new PGLiteSocketServer({
+  db: database,
+  host,
+  port,
+  maxConnections: 100, // PGLite only accepts 1 connection which makes the migration fail. Setting this to > 1 doesn't change the limitation of PGLite, but will mutliplex the connections.
+})
 
 await server.start()
 
