@@ -18,23 +18,26 @@ import {
   submitStudySessionQuestionAnswers,
   type StudySessionAnswerSubmission,
 } from '@/lib/service/study-session-service'
+import { parseUUID, type UUID } from '@/lib/domain/uuid'
 import type { Question, User } from '@/payload/payload-types'
 import config from '@payload-config'
 
 type QuestionKind = 'multipleChoice' | 'selfReport' | 'shortText'
+type CreatedQuestion = Question & { id: UUID }
+const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 
 describe('study session service integration', () => {
-  it('documents the current serial numeric ID shape for Payload records used by study sessions', async () => {
+  it('documents the current UUID ID shape for Payload records used by study sessions', async () => {
     const { questions, session, user } = await createStudySessionFixture([{ kind: 'multipleChoice' }])
     const question = requireQuestion(questions[0])
 
-    expect(typeof user.id).toBe('number')
-    expect(user.id).toBeGreaterThan(0)
-    expect(typeof question.id).toBe('number')
-    expect(question.id).toBeGreaterThan(0)
-    expect(typeof session.id).toBe('number')
-    expect(session.id).toBeGreaterThan(0)
-    expect(typeof session.questions[0]?.question).toBe('number')
+    expect(typeof user.id).toBe('string')
+    expect(user.id).toMatch(uuidPattern)
+    expect(typeof question.id).toBe('string')
+    expect(question.id).toMatch(uuidPattern)
+    expect(typeof session.id).toBe('string')
+    expect(session.id).toMatch(uuidPattern)
+    expect(typeof session.questions[0]?.question).toBe('string')
     expect(session.questions[0]?.question).toBe(question.id)
   }, 60_000)
 
@@ -529,13 +532,12 @@ async function createStudySessionFixture(
 ) {
   const payload = await getPayload({ config })
   const user = options.user ?? (await createUser([USER_ROLES.student]))
-  const questions: Question[] = []
+  const questions: CreatedQuestion[] = []
   for (const questionConfig of questionConfigs) {
-    questions.push(
-      questionConfig.kind === 'multipart'
-        ? await createMultipartQuestion()
-        : await createQuestion(questionConfig.kind),
-    )
+    const question = questionConfig.kind === 'multipart'
+      ? await createMultipartQuestion()
+      : await createQuestion(questionConfig.kind)
+    questions.push({ ...question, id: parseUUID(question.id) })
   }
 
   const session = await payload.create({
@@ -555,7 +557,7 @@ async function createStudySessionFixture(
     draft: false,
   })
 
-  return { questions, session, user }
+  return { questions, session: { ...session, id: parseUUID(session.id) }, user }
 }
 
 async function createUser(roles: UserRole[]) {
@@ -685,7 +687,7 @@ function buildMalformedAnswerCase(
   }
 }
 
-function requireQuestion(question: Question | undefined): Question {
+function requireQuestion<TQuestion extends Question>(question: TQuestion | undefined): TQuestion {
   if (!question) {
     throw new Error('Expected test question to exist.')
   }

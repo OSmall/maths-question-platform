@@ -18,6 +18,7 @@ import {
   buildStarterQuestionDraftData,
   extractSubTopicIDs,
 } from './question-authoring-utils'
+import type { UUID } from '@/lib/domain/uuid'
 
 export function QuestionSaveAndAddAnotherMenuItem() {
   const router = useRouter()
@@ -106,7 +107,7 @@ async function createNextQuestionDraft({
   api: string
   collectionSlug: string
   locale: string
-  subTopicIDs: number[]
+  subTopicIDs: UUID[]
 }) {
   const createURL = `${api}/${collectionSlug}?${new URLSearchParams({
     depth: '0',
@@ -154,15 +155,15 @@ async function createQuestionDraft(
   })
   const payload = (await parseJSONResponse(response)) as
     | {
-        doc?: { id?: number | string }
+        doc?: { id?: string }
         errors?: Array<{ message?: string }>
-        id?: number | string
+        id?: string
         message?: string
       }
     | undefined
   const createdID = payload?.doc?.id ?? payload?.id
 
-  if (response.ok && (typeof createdID === 'number' || typeof createdID === 'string')) {
+  if (response.ok && typeof createdID === 'string') {
     return {
       id: createdID,
       ok: true as const,

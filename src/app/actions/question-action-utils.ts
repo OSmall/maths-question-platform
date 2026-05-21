@@ -1,5 +1,7 @@
 import { z } from 'zod'
 
+import { uuidSchema, type UUID } from '@/lib/domain/uuid'
+
 const answerRowFieldPattern = /^answers\.(\d+)\.(partId|type|value)$/
 
 const answerRowSchema = z.object({
@@ -10,7 +12,7 @@ const answerRowSchema = z.object({
 
 const submittedQuestionPayloadSchema = z.object({
   rows: z.array(answerRowSchema),
-  questionId: z.number().int().positive(),
+  questionId: uuidSchema,
   previewStudySessionId: z.string().min(1),
   flagged: z.boolean(),
 }).transform(({ rows, ...payload }) => ({
@@ -23,7 +25,7 @@ export const submittedQuestionFormSchema = z
   .transform((formData) => {
     return {
       flagged: formData.get('flagged') === '1',
-      questionId: Number(formData.get('questionId')),
+      questionId: String(formData.get('questionId') ?? ''),
       previewStudySessionId: String(formData.get('previewStudySessionId') ?? ''),
       rows: parseAnswerRows(formData),
     }
@@ -35,7 +37,7 @@ export function parseSubmittedQuestionFormData(formData: FormData) {
 }
 
 export function buildQuestionReviewPath(
-  questionId: number,
+  questionId: UUID,
   previewStudySessionId: string,
   answers: Record<string, string>,
   options: { flagged?: boolean } = {},

@@ -6,6 +6,7 @@ import { toast } from 'sonner'
 import useSWR from 'swr'
 
 import { Button } from '@/components/ui/button'
+import type { UUID } from '@/lib/domain/uuid'
 
 type FlagState = {
   flagged: boolean
@@ -25,12 +26,12 @@ type StudySessionQuestionFlagButtonProps = {
   setFlaggedAction: (input: {
     flagged: boolean
     questionNumber: number
-    studySessionId: number
+    studySessionId: UUID
   }) => Promise<{
     data?: { flagged: boolean } | { message: string; status: 'error' }
     serverError?: string
   } | void>
-  studySessionId: number
+  studySessionId: UUID
 }
 
 export function PreviewQuestionFlagButton({ initialFlagged }: PreviewQuestionFlagButtonProps) {

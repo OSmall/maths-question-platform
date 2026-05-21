@@ -1,5 +1,6 @@
 import { z } from 'zod'
 
+import { uuidSchema, type UUID } from '@/lib/domain/uuid'
 import type { StudySessionAnswerSubmission } from '@/lib/service/study-session-service'
 
 const answerRowFieldPattern = /^answers\.(\d+)\.(partId|type|value)$/
@@ -24,7 +25,7 @@ const answerRowSchema = z.discriminatedUnion('type', [
 
 const studySessionQuestionPayloadSchema = z.object({
   questionNumber: z.number().int().positive(),
-  studySessionId: z.number().int().positive(),
+  studySessionId: uuidSchema,
 })
 
 const submittedStudySessionQuestionPayloadSchema = z
@@ -64,7 +65,7 @@ export const studySessionQuestionFormSchema = z
   .instanceof(FormData)
   .transform((formData) => ({
     questionNumber: Number(formData.get('questionNumber')),
-    studySessionId: Number(formData.get('studySessionId')),
+    studySessionId: String(formData.get('studySessionId') ?? ''),
   }))
   .pipe(studySessionQuestionPayloadSchema)
 
@@ -73,14 +74,14 @@ export const submittedStudySessionQuestionFormSchema = z
   .transform((formData) => ({
     questionNumber: Number(formData.get('questionNumber')),
     rows: parseAnswerRows(formData),
-    studySessionId: Number(formData.get('studySessionId')),
+    studySessionId: String(formData.get('studySessionId') ?? ''),
   }))
   .pipe(submittedStudySessionQuestionPayloadSchema)
 
 export const setStudySessionQuestionFlaggedSchema = z.object({
   flagged: z.boolean(),
   questionNumber: z.number().int().positive(),
-  studySessionId: z.number().int().positive(),
+  studySessionId: uuidSchema,
 })
 
 export function parseSubmittedStudySessionQuestionFormData(formData: FormData) {
@@ -91,7 +92,7 @@ export function parseStudySessionQuestionFormData(formData: FormData) {
   return studySessionQuestionFormSchema.parse(formData)
 }
 
-export function buildStudySessionQuestionPath(studySessionId: number, questionNumber: number) {
+export function buildStudySessionQuestionPath(studySessionId: UUID, questionNumber: number) {
   return `/study-session/${studySessionId}/question/${questionNumber}`
 }
 

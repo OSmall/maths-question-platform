@@ -37,7 +37,8 @@ describe('auth utilities', () => {
 
 function createUser(roles: User['roles']): User {
   return {
-    id: 1,
+    collection: 'users',
+    id: 'user-1',
     email: 'user@example.com',
     roles,
     createdAt: '2026-05-13T00:00:00.000Z',

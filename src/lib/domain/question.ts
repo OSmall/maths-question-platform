@@ -2,10 +2,12 @@ import { hasText } from '@payloadcms/richtext-lexical/shared'
 import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical'
 import { z } from 'zod'
 
+import { uuidSchema } from '@/lib/domain/uuid'
+
 const richTextSchema = z.custom<SerializedEditorState>((value) => value != null).optional()
 
 const subTopicSchema = z.object({
-  id: z.number(),
+  id: uuidSchema,
   subtopicName: z.string().min(1),
   topicName: z.string().min(1),
 })
@@ -31,7 +33,7 @@ const renderableQuestionPartSchema = z.object({
 export const renderableQuestionSchema = z
   .object({
     index: z.number().int().positive(), // one-based display number within the list of questions
-    id: z.number(), // globally unique identifier
+    id: uuidSchema, // globally unique identifier
     version: z.string().min(1),
     prompt: richTextSchema,
     subTopics: z.array(subTopicSchema),

@@ -53,26 +53,24 @@ export const SyllabusSubTopic: CollectionConfig = {
       required: true,
       validate: async (
         value: unknown,
-        options: {
-          data?: {
-            syllabus?: number | { id?: number | null } | null
-          }
-          id?: number | string
-          req: PayloadRequest
-        },
+        options: { data?: unknown; id?: number | string; req: PayloadRequest },
       ) => {
         const relationshipValue =
-          typeof value === 'number'
+          typeof value === 'string'
             ? value
-            : value && typeof value === 'object' && 'id' in value && typeof value.id === 'number'
+            : value &&
+                typeof value === 'object' &&
+                'id' in value &&
+                typeof value.id === 'string'
               ? value.id
               : undefined
 
         return validateUniqueSyllabusSubTopic({
-          id: options.id,
+          id: typeof options.id === 'string' ? options.id : undefined,
           req: options.req,
           subTopic: relationshipValue,
-          syllabus: options.data?.syllabus,
+          syllabus: (options.data as { syllabus?: string | { id?: string | null } | null } | undefined)
+            ?.syllabus,
         })
       },
     },

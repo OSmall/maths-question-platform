@@ -6,8 +6,8 @@ type SyllabusInput = {
 
 type SyllabusSubTopicInput = {
   status?: 'assumedKnowledge' | 'included' | null
-  subTopic?: number | { id?: number | null } | null
-  syllabus?: number | { id?: number | null } | null
+  subTopic?: string | { id?: string | null } | null
+  syllabus?: string | { id?: string | null } | null
 }
 
 type FindSyllabusSubTopics = (options: {
@@ -24,12 +24,16 @@ type SyllabusSubTopicValidationRequest = {
   }
 }
 
-function extractRelationshipId(value: number | { id?: number | null } | null | undefined) {
-  if (typeof value === 'number') {
+function extractRelationshipId(value: string | { id?: string | null } | null | undefined) {
+  if (typeof value === 'string') {
     return value
   }
 
-  if (value && typeof value === 'object' && typeof value.id === 'number') {
+  if (
+    value &&
+    typeof value === 'object' &&
+    typeof value.id === 'string'
+  ) {
     return value.id
   }
 
@@ -57,7 +61,7 @@ export function normalizeSyllabusSubTopicInput(data: SyllabusSubTopicInput | nul
 }
 
 export async function validateUniqueSyllabusSubTopic(args: {
-  id?: number | string
+  id?: string
   req: SyllabusSubTopicValidationRequest
   subTopic: SyllabusSubTopicInput['subTopic']
   syllabus: SyllabusSubTopicInput['syllabus']
@@ -65,7 +69,10 @@ export async function validateUniqueSyllabusSubTopic(args: {
   const syllabusId = extractRelationshipId(args.syllabus)
   const subTopicId = extractRelationshipId(args.subTopic)
 
-  if (typeof syllabusId !== 'number' || typeof subTopicId !== 'number') {
+  if (
+    typeof syllabusId !== 'string' ||
+    typeof subTopicId !== 'string'
+  ) {
     return true
   }
 
@@ -81,9 +88,9 @@ export async function validateUniqueSyllabusSubTopic(args: {
 
   const conflictingMapping = existingMappings.docs.find((mapping) => {
     const candidate = mapping as {
-      id?: number | string
-      subTopic?: number | { id?: number | null } | null
-      syllabus?: number | { id?: number | null } | null
+      id?: string
+      subTopic?: string | { id?: string | null } | null
+      syllabus?: string | { id?: string | null } | null
     }
 
     if (candidate.id === args.id) {

@@ -4,6 +4,7 @@ import { PreviewQuestionFlagButton } from '@/components/question/question-flag-b
 import { QuestionPreviewWarning } from '@/components/question/question-preview-warning'
 import { QuestionRenderer } from '@/components/question/question-renderer'
 import { QuestionNotRenderableError } from '@/lib/errors'
+import { parseUUIDToResult, randomUUIDv7 } from '@/lib/domain/uuid'
 import { getQuestionSubmissionEvaluation } from '@/lib/service/question-evaluation-service'
 import { getQuestionById } from '@/lib/service/question-service'
 import { USER_ROLES } from '@/lib/auth/roles'
@@ -30,11 +31,11 @@ export default async function QuestionPage({
     draftMode(),
   ])
 
-  const questionId = Number(id)
-  if (isNaN(questionId)) {
-    console.warn(`Question id [${id}] is not a number, redirecting to Not Found page`)
+  const questionIdResult = parseUUIDToResult(id)
+  if (questionIdResult.isErr()) {
     notFound()
   }
+  const questionId = questionIdResult.value
 
   await requireRole(buildQuestionPath(id, resolvedSearchParams), USER_ROLES.admin)
 
@@ -53,7 +54,7 @@ export default async function QuestionPage({
     }
 
     previewSearchParams.delete('seed')
-    previewSearchParams.set('previewStudySessionId', previewStudySessionId ?? crypto.randomUUID())
+    previewSearchParams.set('previewStudySessionId', previewStudySessionId ?? randomUUIDv7())
     redirect(`/question/${id}?${previewSearchParams.toString()}`)
   }
 

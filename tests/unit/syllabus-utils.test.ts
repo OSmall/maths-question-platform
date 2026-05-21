@@ -1,15 +1,24 @@
 import { describe, expect, it, mock } from 'bun:test'
 
 import { validateUniqueSyllabusSubTopic } from '@/payload/collections/syllabus-utils'
+import { parseUUID } from '@/lib/domain/uuid'
+
+const syllabusA = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a23')
+const syllabusB = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a24')
+const syllabusC = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a25')
+const subTopicA = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a26')
+const subTopicB = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a27')
+const subTopicC = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a28')
+const mappingA = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a29')
 
 describe('validateUniqueSyllabusSubTopic', () => {
   it('allows a new syllabus/subtopic pair', async () => {
     const find = mock(async () => ({
       docs: [
         {
-          id: 1,
-          subTopic: 10,
-          syllabus: 1,
+          id: mappingA,
+          subTopic: subTopicA,
+          syllabus: syllabusA,
         },
       ],
     }))
@@ -20,8 +29,8 @@ describe('validateUniqueSyllabusSubTopic', () => {
           find,
         },
       },
-      subTopic: 11,
-      syllabus: 1,
+      subTopic: subTopicB,
+      syllabus: syllabusA,
     })
 
     expect(result).toBe(true)
@@ -31,9 +40,9 @@ describe('validateUniqueSyllabusSubTopic', () => {
     const find = mock(async () => ({
       docs: [
         {
-          id: 7,
-          subTopic: 11,
-          syllabus: 2,
+          id: mappingA,
+          subTopic: subTopicB,
+          syllabus: syllabusB,
         },
       ],
     }))
@@ -44,8 +53,8 @@ describe('validateUniqueSyllabusSubTopic', () => {
           find,
         },
       },
-      subTopic: 11,
-      syllabus: 2,
+      subTopic: subTopicB,
+      syllabus: syllabusB,
     })
 
     expect(result).toBe('This subtopic is already mapped for the selected syllabus.')
@@ -55,22 +64,22 @@ describe('validateUniqueSyllabusSubTopic', () => {
     const find = mock(async () => ({
       docs: [
         {
-          id: 9,
-          subTopic: 20,
-          syllabus: 3,
+          id: mappingA,
+          subTopic: subTopicC,
+          syllabus: syllabusC,
         },
       ],
     }))
 
     const result = await validateUniqueSyllabusSubTopic({
-      id: 9,
+      id: mappingA,
       req: {
         payload: {
           find,
         },
       },
-      subTopic: 20,
-      syllabus: 3,
+      subTopic: subTopicC,
+      syllabus: syllabusC,
     })
 
     expect(result).toBe(true)

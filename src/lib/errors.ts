@@ -1,5 +1,7 @@
 import type { ZodError } from 'zod'
 
+import type { UUID } from '@/lib/domain/uuid'
+
 class AppError extends Error {
   static ERROR_NAME = 'APP_ERROR'
   constructor(message: string, options: ErrorOptions = {}) {
@@ -49,6 +51,13 @@ export class InvalidPreviewSlugError extends FormatError {
   }
 }
 
+export class InvalidUUIDError extends FormatError {
+  static ERROR_NAME = 'INVALID_UUID_ERROR'
+  constructor(value: unknown, options: ErrorOptions = {}) {
+    super(`Invalid UUID: ${value}`, options)
+  }
+}
+
 export class QuestionNotRenderableError extends AppError {
   static ERROR_NAME = 'QUESTION_NOT_RENDERABLE_ERROR'
 
@@ -62,21 +71,21 @@ export class QuestionNotRenderableError extends AppError {
 
 export class StudySessionQuestionIndexError extends FormatError {
   static ERROR_NAME = 'STUDY_SESSION_QUESTION_INDEX_ERROR'
-  constructor(studySessionId: number, questionIndex: number, options: ErrorOptions = {}) {
+  constructor(studySessionId: UUID, questionIndex: number, options: ErrorOptions = {}) {
     super(`Question index ${questionIndex} is out of range for study session ${studySessionId}`, options)
   }
 }
 
 export class StudySessionQuestionAlreadyAnsweredError extends AppError {
   static ERROR_NAME = 'STUDY_SESSION_QUESTION_ALREADY_ANSWERED_ERROR'
-  constructor(studySessionId: number, questionIndex: number, options: ErrorOptions = {}) {
+  constructor(studySessionId: UUID, questionIndex: number, options: ErrorOptions = {}) {
     super(`Question ${questionIndex} in study session ${studySessionId} is already answered`, options)
   }
 }
 
 export class StudySessionQuestionIncompleteAnswerError extends AppError {
   static ERROR_NAME = 'STUDY_SESSION_QUESTION_INCOMPLETE_ANSWER_ERROR'
-  constructor(studySessionId: number, questionIndex: number, partIds: readonly string[], options: ErrorOptions = {}) {
+  constructor(studySessionId: UUID, questionIndex: number, partIds: readonly string[], options: ErrorOptions = {}) {
     super(
       `Question ${questionIndex} in study session ${studySessionId} is missing required answers for parts: ${partIds.join(', ')}`,
       options,
@@ -86,7 +95,7 @@ export class StudySessionQuestionIncompleteAnswerError extends AppError {
 
 export class StudySessionQuestionInvalidAnswerError extends AppError {
   static ERROR_NAME = 'STUDY_SESSION_QUESTION_INVALID_ANSWER_ERROR'
-  constructor(studySessionId: number, questionIndex: number, reason: string, options: ErrorOptions = {}) {
+  constructor(studySessionId: UUID, questionIndex: number, reason: string, options: ErrorOptions = {}) {
     super(
       `Question ${questionIndex} in study session ${studySessionId} has invalid submitted answers: ${reason}`,
       options,
@@ -96,7 +105,7 @@ export class StudySessionQuestionInvalidAnswerError extends AppError {
 
 export class StudySessionUnsupportedStateError extends AppError {
   static ERROR_NAME = 'STUDY_SESSION_UNSUPPORTED_STATE_ERROR'
-  constructor(studySessionId: number, state: string, options: ErrorOptions = {}) {
+  constructor(studySessionId: UUID, state: string, options: ErrorOptions = {}) {
     super(`Study session ${studySessionId} is in unsupported state ${state}`, options)
   }
 }

@@ -4,6 +4,7 @@ import type {
   RenderableQuestion,
   RenderableQuestionSubmissionEvaluation,
 } from '@/lib/domain/question'
+import { uuidSchema } from '@/lib/domain/uuid'
 
 export const studySessionAnswerSchema = z.discriminatedUnion('type', [
   z.object({
@@ -31,7 +32,7 @@ export const studySessionQuestionSchema = z
   .object({
     id: z.string().min(1).optional(),
     index: z.number().int().nonnegative(),
-    questionId: z.number().int().positive(),
+    questionId: uuidSchema,
     questionVersionId: z.string().min(1),
     status: z.union([z.literal('notStarted'), z.literal('skipped'), z.literal('answered')]),
     flagged: z.boolean(),
@@ -67,14 +68,14 @@ export const studySessionQuestionSchema = z
 
 export const studySessionSchema = z
   .object({
-    id: z.number().int().positive(),
+    id: uuidSchema,
     state: z.union([z.literal('notStarted'), z.literal('started'), z.literal('finished')]),
     begunAt: z.iso.datetime().optional(),
     endedAt: z.iso.datetime().optional(),
     questions: z.array(studySessionQuestionSchema).min(1),
   })
   .superRefine((session, ctx) => {
-    const questionIds = new Set<number>()
+    const questionIds = new Set<string>()
 
     session.questions.forEach((question, index) => {
       if (question.index !== index) {

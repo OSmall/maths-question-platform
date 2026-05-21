@@ -37,22 +37,18 @@ export const SubTopic: CollectionConfig = {
       type: 'text',
       required: true,
       validate: async (
-        value: null | string | undefined,
-        options: {
-          data?: { topic?: number | { id?: number | null } | null }
-          id?: number | string
-          req: PayloadRequest
-        },
+        value: unknown,
+        options: { data?: unknown; id?: number | string; req: PayloadRequest },
       ) => {
         if (typeof value !== 'string' || value.trim().length === 0) {
           return 'Subtopic name is required.'
         }
 
         return validateUniqueSubTopicName({
-          id: options.id,
+          id: typeof options.id === 'string' ? options.id : undefined,
           name: value,
           req: options.req,
-          topic: options.data?.topic,
+          topic: (options.data as { topic?: string | { id?: string | null } | null } | undefined)?.topic,
         })
       },
       admin: {

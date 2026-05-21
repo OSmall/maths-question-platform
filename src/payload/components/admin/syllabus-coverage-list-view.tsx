@@ -8,6 +8,7 @@ import {
   type PersistedCoverageEntry,
   type SyllabusMatrixColumn,
 } from '@/lib/syllabus-coverage/matrix'
+import { parseUUID } from '@/lib/domain/uuid'
 import { SyllabusCoverageMatrix } from './syllabus-coverage-matrix'
 
 export async function SyllabusCoverageListView(props: ListViewServerProps) {
@@ -51,14 +52,14 @@ export async function SyllabusCoverageListView(props: ListViewServerProps) {
   const syllabuses = buildMatrixColumns(
     syllabusesResult.docs
       .map((doc) => {
-        const candidate = doc as { id?: number; name?: string | null }
+        const candidate = doc as { id?: string; name?: string | null }
 
-        if (typeof candidate.id !== 'number' || typeof candidate.name !== 'string') {
+        if (typeof candidate.id !== 'string' || typeof candidate.name !== 'string') {
           return null
         }
 
         return {
-          id: candidate.id,
+          id: parseUUID(candidate.id),
           name: candidate.name,
         } satisfies SyllabusMatrixColumn
       })
@@ -68,26 +69,26 @@ export async function SyllabusCoverageListView(props: ListViewServerProps) {
   const taxonomyRows = subTopicsResult.docs
     .map((doc) => {
       const candidate = doc as {
-        id?: number
+        id?: string
         name?: string | null
-        topic?: { id?: number; name?: string | null } | number | null
+        topic?: { id?: string; name?: string | null } | string | null
       }
 
       if (
-        typeof candidate.id !== 'number' ||
+        typeof candidate.id !== 'string' ||
         typeof candidate.name !== 'string' ||
         !candidate.topic ||
-        typeof candidate.topic === 'number' ||
-        typeof candidate.topic.id !== 'number' ||
+        typeof candidate.topic === 'string' ||
+        typeof candidate.topic.id !== 'string' ||
         typeof candidate.topic.name !== 'string'
       ) {
         return null
       }
 
       return {
-        topicId: candidate.topic.id,
+        topicId: parseUUID(candidate.topic.id),
         topicName: candidate.topic.name,
-        subTopicId: candidate.id,
+        subTopicId: parseUUID(candidate.id),
         subTopicName: candidate.name,
       }
     })
@@ -96,29 +97,29 @@ export async function SyllabusCoverageListView(props: ListViewServerProps) {
   const coverageEntries = coverageResult.docs
     .map((doc) => {
       const candidate = doc as {
-        id?: number
+        id?: string
         status?: 'assumedKnowledge' | 'included'
-        subTopic?: number | { id?: number | null } | null
-        syllabus?: number | { id?: number | null } | null
+        subTopic?: string | { id?: string | null } | null
+        syllabus?: string | { id?: string | null } | null
       }
 
       const subTopicId = extractRelationshipId(candidate.subTopic)
       const syllabusId = extractRelationshipId(candidate.syllabus)
 
       if (
-        typeof candidate.id !== 'number' ||
-        typeof subTopicId !== 'number' ||
-        typeof syllabusId !== 'number' ||
+        typeof candidate.id !== 'string' ||
+        typeof subTopicId !== 'string' ||
+        typeof syllabusId !== 'string' ||
         (candidate.status !== 'included' && candidate.status !== 'assumedKnowledge')
       ) {
         return null
       }
 
       return {
-        id: candidate.id,
+        id: parseUUID(candidate.id),
         status: candidate.status,
-        subTopicId,
-        syllabusId,
+        subTopicId: parseUUID(subTopicId),
+        syllabusId: parseUUID(syllabusId),
       } satisfies PersistedCoverageEntry
     })
     .filter((entry) => entry !== null)
@@ -164,12 +165,12 @@ function getDefaultListViewProps(props: ListViewServerProps): ListViewClientProp
   }
 }
 
-function extractRelationshipId(value: number | { id?: number | null } | null | undefined) {
-  if (typeof value === 'number') {
+function extractRelationshipId(value: string | { id?: string | null } | null | undefined) {
+  if (typeof value === 'string') {
     return value
   }
 
-  if (value && typeof value === 'object' && typeof value.id === 'number') {
+  if (value && typeof value === 'object' && typeof value.id === 'string') {
     return value.id
   }
 

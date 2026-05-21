@@ -4,6 +4,8 @@
 
 This is separate from the default test stack. Unit, integration, and E2E tests remain self-contained. The smoke test is for migration rehearsals and Neon branch validation.
 
+For the full UUID production cutover flow, see [`docs/payload-uuid-cutover.md`](payload-uuid-cutover.md).
+
 ## When To Run
 
 Run the smoke test when changing Payload collections, Payload migrations, database adapter settings, relationship fields, upload tables, or ID strategy.
@@ -55,10 +57,10 @@ Use `context.marker` in unique fields so smoke records are easy to identify. Sto
 The expected root Payload ID type is intentionally hardcoded in `scripts/payload-smoke.ts`:
 
 ```ts
-const expectedPayloadIdType = 'number'
+const expectedPayloadIdType = 'uuid'
 ```
 
-When the app intentionally migrates Payload IDs to UUIDs, change that constant to `'uuid'` in the same migration work. This keeps the ID-shape change explicit in the diff.
+If the app intentionally changes Payload ID strategy again, update that constant in the same migration work. This keeps the ID-shape change explicit in the diff.
 
 ## Vercel And Migrations
 

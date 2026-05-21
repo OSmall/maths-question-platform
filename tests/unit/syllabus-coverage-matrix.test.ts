@@ -7,27 +7,40 @@ import {
   groupTaxonomyRows,
   planCoverageMutations,
 } from '@/lib/syllabus-coverage/matrix'
+import { parseUUID } from '@/lib/domain/uuid'
+
+const topicAlgebra = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a07')
+const topicStatistics = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a08')
+const subTopicFactorising = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a09')
+const subTopicMedian = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a10')
+const subTopicMean = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a11')
+const subTopicOther = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a12')
+const syllabusOne = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a13')
+const syllabusTwo = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a14')
+const syllabusThree = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a15')
+const coverageOne = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a16')
+const coverageTwo = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a17')
 
 describe('syllabus coverage matrix helpers', () => {
   it('groups taxonomy rows by topic and sorts them alphabetically', () => {
     const groups = groupTaxonomyRows([
-      { topicId: 2, topicName: 'Statistics', subTopicId: 20, subTopicName: 'Median' },
-      { topicId: 1, topicName: 'Algebra', subTopicId: 10, subTopicName: 'Factorising' },
-      { topicId: 2, topicName: 'Statistics', subTopicId: 21, subTopicName: 'Mean' },
+      { topicId: topicStatistics, topicName: 'Statistics', subTopicId: subTopicMedian, subTopicName: 'Median' },
+      { topicId: topicAlgebra, topicName: 'Algebra', subTopicId: subTopicFactorising, subTopicName: 'Factorising' },
+      { topicId: topicStatistics, topicName: 'Statistics', subTopicId: subTopicMean, subTopicName: 'Mean' },
     ])
 
     expect(groups).toEqual([
       {
-        topicId: 1,
+        topicId: topicAlgebra,
         topicName: 'Algebra',
-        subTopics: [{ subTopicId: 10, subTopicName: 'Factorising' }],
+        subTopics: [{ subTopicId: subTopicFactorising, subTopicName: 'Factorising' }],
       },
       {
-        topicId: 2,
+        topicId: topicStatistics,
         topicName: 'Statistics',
         subTopics: [
-          { subTopicId: 21, subTopicName: 'Mean' },
-          { subTopicId: 20, subTopicName: 'Median' },
+          { subTopicId: subTopicMean, subTopicName: 'Mean' },
+          { subTopicId: subTopicMedian, subTopicName: 'Median' },
         ],
       },
     ])
@@ -36,16 +49,16 @@ describe('syllabus coverage matrix helpers', () => {
   it('diffs sparse coverage states against excluded-by-default cells', () => {
     const initialState = buildInitialCoverageState([
       {
-        id: 1,
+        id: coverageOne,
         status: 'included',
-        subTopicId: 10,
-        syllabusId: 1,
+        subTopicId: subTopicFactorising,
+        syllabusId: syllabusOne,
       },
     ])
 
     const currentState = new Map(initialState)
-    currentState.set(buildMatrixCellKey(1, 10), 'assumedKnowledge')
-    currentState.set(buildMatrixCellKey(2, 20), 'included')
+    currentState.set(buildMatrixCellKey(syllabusOne, subTopicFactorising), 'assumedKnowledge')
+    currentState.set(buildMatrixCellKey(syllabusTwo, subTopicMedian), 'included')
 
     const changedCells = diffCoverageStates({ currentState, initialState })
 
@@ -53,14 +66,14 @@ describe('syllabus coverage matrix helpers', () => {
       {
         nextStatus: 'assumedKnowledge',
         previousStatus: 'included',
-        subTopicId: 10,
-        syllabusId: 1,
+        subTopicId: subTopicFactorising,
+        syllabusId: syllabusOne,
       },
       {
         nextStatus: 'included',
         previousStatus: 'excluded',
-        subTopicId: 20,
-        syllabusId: 2,
+        subTopicId: subTopicMedian,
+        syllabusId: syllabusTwo,
       },
     ])
   })
@@ -71,34 +84,34 @@ describe('syllabus coverage matrix helpers', () => {
         {
           nextStatus: 'included',
           previousStatus: 'excluded',
-          subTopicId: 20,
-          syllabusId: 2,
+          subTopicId: subTopicMedian,
+          syllabusId: syllabusTwo,
         },
         {
           nextStatus: 'assumedKnowledge',
           previousStatus: 'included',
-          subTopicId: 10,
-          syllabusId: 1,
+          subTopicId: subTopicFactorising,
+          syllabusId: syllabusOne,
         },
         {
           nextStatus: 'excluded',
           previousStatus: 'included',
-          subTopicId: 30,
-          syllabusId: 3,
+          subTopicId: subTopicOther,
+          syllabusId: syllabusThree,
         },
       ],
       persistedEntries: [
         {
-          id: 100,
+          id: coverageOne,
           status: 'included',
-          subTopicId: 10,
-          syllabusId: 1,
+          subTopicId: subTopicFactorising,
+          syllabusId: syllabusOne,
         },
         {
-          id: 101,
+          id: coverageTwo,
           status: 'included',
-          subTopicId: 30,
-          syllabusId: 3,
+          subTopicId: subTopicOther,
+          syllabusId: syllabusThree,
         },
       ],
     })
@@ -107,14 +120,14 @@ describe('syllabus coverage matrix helpers', () => {
       create: [
         {
           status: 'included',
-          subTopicId: 20,
-          syllabusId: 2,
+          subTopicId: subTopicMedian,
+          syllabusId: syllabusTwo,
         },
       ],
-      delete: [{ id: 101 }],
+      delete: [{ id: coverageTwo }],
       update: [
         {
-          id: 100,
+          id: coverageOne,
           status: 'assumedKnowledge',
         },
       ],

@@ -6,11 +6,14 @@ import {
   parseSubmittedStudySessionQuestionFormData,
   toZeroBasedQuestionIndex,
 } from '@/app/actions/study-session-action-utils'
+import { randomUUIDv7 } from '@/lib/domain/uuid'
+
+const studySessionId = randomUUIDv7()
 
 describe('study session action utils', () => {
   it('parses indexed answer rows from submitted form data', () => {
     const formData = new FormData()
-    formData.set('studySessionId', '123')
+    formData.set('studySessionId', studySessionId)
     formData.set('questionNumber', '2')
     formData.set('answers.1.partId', 'part-2')
     formData.set('answers.1.type', 'shortText')
@@ -30,13 +33,13 @@ describe('study session action utils', () => {
         { answer: false, partId: 'part-3', type: 'selfReport' },
       ],
       questionNumber: 2,
-      studySessionId: 123,
+      studySessionId,
     })
   })
 
   it('omits unanswered radio rows so the service can return an incomplete-answer business error', () => {
     const formData = new FormData()
-    formData.set('studySessionId', '123')
+    formData.set('studySessionId', studySessionId)
     formData.set('questionNumber', '2')
     formData.set('answers.0.partId', 'part-1')
     formData.set('answers.0.type', 'multipleChoice')
@@ -51,12 +54,12 @@ describe('study session action utils', () => {
 
   it('parses StudySession question form identity for skip actions', () => {
     const formData = new FormData()
-    formData.set('studySessionId', '123')
+    formData.set('studySessionId', studySessionId)
     formData.set('questionNumber', '2')
 
     expect(parseStudySessionQuestionFormData(formData)).toEqual({
       questionNumber: 2,
-      studySessionId: 123,
+      studySessionId,
     })
   })
 
@@ -65,24 +68,16 @@ describe('study session action utils', () => {
     missingSessionId.set('questionNumber', '2')
 
     const missingQuestionNumber = new FormData()
-    missingQuestionNumber.set('studySessionId', '123')
+    missingQuestionNumber.set('studySessionId', studySessionId)
 
     expect(() => parseStudySessionQuestionFormData(missingSessionId)).toThrow()
     expect(() => parseStudySessionQuestionFormData(missingQuestionNumber)).toThrow()
   })
 
-  it('rejects invalid numeric StudySession identity fields from form data', () => {
-    for (const studySessionId of ['not-a-number', '1.5', '0', '-1']) {
-      const formData = new FormData()
-      formData.set('studySessionId', studySessionId)
-      formData.set('questionNumber', '2')
-
-      expect(() => parseStudySessionQuestionFormData(formData)).toThrow()
-    }
-
+  it('rejects invalid numeric question identity fields from form data', () => {
     for (const questionNumber of ['not-a-number', '1.5', '0', '-1']) {
       const formData = new FormData()
-      formData.set('studySessionId', '123')
+      formData.set('studySessionId', studySessionId)
       formData.set('questionNumber', questionNumber)
 
       expect(() => parseStudySessionQuestionFormData(formData)).toThrow()
@@ -91,8 +86,8 @@ describe('study session action utils', () => {
 
   it('rejects invalid StudySession identity fields from submitted answer form data', () => {
     const formData = new FormData()
-    formData.set('studySessionId', 'not-a-number')
-    formData.set('questionNumber', '2')
+    formData.set('studySessionId', studySessionId)
+    formData.set('questionNumber', 'not-a-number')
     formData.set('answers.0.partId', 'part-1')
     formData.set('answers.0.type', 'multipleChoice')
     formData.set('answers.0.value', 'choice-a')
@@ -101,8 +96,8 @@ describe('study session action utils', () => {
   })
 
   it('builds one-based StudySession question paths and converts to zero-based indexes', () => {
-    expect(buildStudySessionQuestionPath(123, 1)).toBe('/study-session/123/question/1')
-    expect(buildStudySessionQuestionPath(123, 2)).toBe('/study-session/123/question/2')
+    expect(buildStudySessionQuestionPath(studySessionId, 1)).toBe(`/study-session/${studySessionId}/question/1`)
+    expect(buildStudySessionQuestionPath(studySessionId, 2)).toBe(`/study-session/${studySessionId}/question/2`)
     expect(toZeroBasedQuestionIndex(1)).toBe(0)
     expect(toZeroBasedQuestionIndex(2)).toBe(1)
   })

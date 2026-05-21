@@ -12,12 +12,13 @@ import { z } from 'zod'
 
 import { planCoverageMutations, syllabusCoverageStatusValues } from '@/lib/syllabus-coverage/matrix'
 import { actionClient } from '@/lib/safe-action'
+import { parseUUID, uuidSchema } from '@/lib/domain/uuid'
 import config from '@payload-config'
 
 const changedCellSchema = z.object({
   nextStatus: z.enum(syllabusCoverageStatusValues),
-  subTopicId: z.number().int().positive(),
-  syllabusId: z.number().int().positive(),
+  subTopicId: uuidSchema,
+  syllabusId: uuidSchema,
 })
 
 const saveSyllabusCoverageSchema = z.object({
@@ -54,29 +55,29 @@ export const saveSyllabusCoverageAction = actionClient
       const relevantEntries = existingCoverage.docs
         .map((doc) => {
           const candidate = doc as {
-            id?: number
+            id?: string
             status?: 'assumedKnowledge' | 'included'
-            subTopic?: number | { id?: number | null } | null
-            syllabus?: number | { id?: number | null } | null
+            subTopic?: string | { id?: string | null } | null
+            syllabus?: string | { id?: string | null } | null
           }
 
           const subTopicId = extractRelationshipId(candidate.subTopic)
           const syllabusId = extractRelationshipId(candidate.syllabus)
 
           if (
-            typeof candidate.id !== 'number' ||
-            typeof syllabusId !== 'number' ||
-            typeof subTopicId !== 'number' ||
+            typeof candidate.id !== 'string' ||
+            typeof syllabusId !== 'string' ||
+            typeof subTopicId !== 'string' ||
             (candidate.status !== 'included' && candidate.status !== 'assumedKnowledge')
           ) {
             return null
           }
 
           return {
-            id: candidate.id,
+            id: parseUUID(candidate.id),
             status: candidate.status,
-            subTopicId,
-            syllabusId,
+            subTopicId: parseUUID(subTopicId),
+            syllabusId: parseUUID(syllabusId),
           }
         })
         .filter((entry) => entry !== null)
@@ -134,12 +135,12 @@ export const saveSyllabusCoverageAction = actionClient
     }
   })
 
-function extractRelationshipId(value: number | { id?: number | null } | null | undefined) {
-  if (typeof value === 'number') {
+function extractRelationshipId(value: string | { id?: string | null } | null | undefined) {
+  if (typeof value === 'string') {
     return value
   }
 
-  if (value && typeof value === 'object' && typeof value.id === 'number') {
+  if (value && typeof value === 'object' && typeof value.id === 'string') {
     return value.id
   }
 

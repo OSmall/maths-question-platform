@@ -6,8 +6,11 @@ import {
   type QuestionVersionForStudySession,
   validateStudySessionQuestionRelationship,
 } from '@/payload/collections/study-session-utils'
+import { parseUUID } from '@/lib/domain/uuid'
 
 const fixedNow = new Date('2026-05-03T01:02:03.000Z')
+const questionA = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a18')
+const questionB = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a19')
 
 describe('study session utils', () => {
   it('builds explicit unanswered rows for every question part', () => {
@@ -23,7 +26,7 @@ describe('study session utils', () => {
         state: 'notStarted',
         questions: [
           {
-            question: 12,
+            question: questionA,
           },
         ],
       },
@@ -38,8 +41,8 @@ describe('study session utils', () => {
       endedAt: undefined,
       questions: [
         {
-          question: 12,
-          questionVersionId: 'version-12',
+          question: questionA,
+          questionVersionId: `version-${questionA}`,
           status: 'notStarted',
           flagged: false,
           answeredAt: undefined,
@@ -58,16 +61,16 @@ describe('study session utils', () => {
 
   it('validates duplicate question relationships', () => {
     expect(
-      validateStudySessionQuestionRelationship(12, {
-        questions: [{ question: 12 }, { question: { id: 12 } }],
+      validateStudySessionQuestionRelationship(questionA, {
+        questions: [{ question: questionA }, { question: { id: questionA } }],
       }),
     ).toBe('Study sessions cannot contain duplicate questions.')
   })
 
   it('allows unique question relationships', () => {
     expect(
-      validateStudySessionQuestionRelationship(12, {
-        questions: [{ question: 12 }, { question: { id: 13 } }],
+      validateStudySessionQuestionRelationship(questionA, {
+        questions: [{ question: questionA }, { question: { id: questionB } }],
       }),
     ).toBe(true)
   })
@@ -75,13 +78,13 @@ describe('study session utils', () => {
   it('leaves duplicate question relationships for field validation', async () => {
     const normalized = await normalizeStudySessionInput({
       data: {
-        questions: [{ question: 12 }, { question: { id: 12 } }],
+        questions: [{ question: questionA }, { question: { id: questionA } }],
       },
       lockQuestionVersion: async (questionId) => createQuestionVersion(questionId, ['part-1']),
       operation: 'create',
     })
 
-    expect(normalized.questions?.map((question) => question.question)).toEqual([12, { id: 12 }])
+    expect(normalized.questions?.map((question) => question.question)).toEqual([questionA, { id: questionA }])
   })
 
   it('leaves missing question relationships for field validation', async () => {
@@ -115,8 +118,8 @@ describe('study session utils', () => {
           questions: [
             {
               id: 'row-1',
-              question: 13,
-              questionVersionId: 'version-12',
+              question: questionB,
+              questionVersionId: `version-${questionA}`,
               status: 'answered',
               answers: [{ partId: 'part-1', type: 'selfReport', selfReport: { answer: true } }],
             },
@@ -129,8 +132,8 @@ describe('study session utils', () => {
           questions: [
             {
               id: 'row-1',
-              question: 12,
-              questionVersionId: 'version-12',
+              question: questionA,
+              questionVersionId: `version-${questionA}`,
               status: 'answered',
               answers: [{ partId: 'part-1', type: 'selfReport', selfReport: { answer: true } }],
             },
@@ -146,8 +149,8 @@ describe('study session utils', () => {
         questions: [
           {
             id: 'row-1',
-            question: 13,
-            questionVersionId: 'version-12',
+            question: questionB,
+            questionVersionId: `version-${questionA}`,
             status: 'notStarted',
             answers: [{ partId: 'old-part', type: 'unanswered' }],
           },
@@ -160,7 +163,7 @@ describe('study session utils', () => {
         questions: [
           {
             id: 'row-1',
-            question: 12,
+              question: questionA,
             questionVersionId: 'version-12',
             status: 'notStarted',
             answers: [{ partId: 'old-part', type: 'unanswered' }],
@@ -171,8 +174,8 @@ describe('study session utils', () => {
 
     expect(normalized.questions?.[0]).toEqual({
       id: 'row-1',
-      question: 13,
-      questionVersionId: 'version-13',
+      question: questionB,
+      questionVersionId: `version-${questionB}`,
       status: 'notStarted',
       flagged: false,
       answeredAt: undefined,
@@ -188,7 +191,7 @@ describe('study session utils', () => {
           questions: [
             {
               id: 'row-1',
-              question: 12,
+              question: questionA,
               questionVersionId: 'other-version',
               status: 'answered',
               answers: [{ partId: 'part-1', type: 'selfReport', selfReport: { answer: true } }],
@@ -202,8 +205,8 @@ describe('study session utils', () => {
           questions: [
             {
               id: 'row-1',
-              question: 12,
-              questionVersionId: 'version-12',
+              question: questionA,
+              questionVersionId: `version-${questionA}`,
               status: 'answered',
               answers: [{ partId: 'part-1', type: 'selfReport', selfReport: { answer: true } }],
             },
@@ -214,10 +217,7 @@ describe('study session utils', () => {
   })
 })
 
-function createQuestionVersion(
-  questionId: number,
-  partIds: string[],
-): QuestionVersionForStudySession {
+function createQuestionVersion(questionId: string, partIds: string[]): QuestionVersionForStudySession {
   return {
     id: `version-${questionId}`,
     version: {
