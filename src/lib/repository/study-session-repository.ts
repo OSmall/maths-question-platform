@@ -2,6 +2,7 @@ import { ResultAsync } from 'neverthrow'
 import { getPayload } from 'payload'
 
 import { PayloadQueryError } from '@/lib/errors'
+import type { UUID } from '@/lib/domain/uuid'
 import { handleRepositoryError } from '@/lib/repository/repository-utils'
 import { StudySession } from '@/payload/collections/study-session'
 import type {
@@ -61,7 +62,7 @@ export type PayloadStudySessionForService = Pick<
 }
 
 async function queryPayloadStudySessionById(
-  id: number,
+  id: UUID,
   options: UserAccessOptions = {},
 ): Promise<PayloadStudySessionForService> {
   const payload = await getPayload({ config })
@@ -126,7 +127,7 @@ async function updatePayloadStudySession(
   return updatedStudySession as PayloadStudySessionForService
 }
 
-export function fetchStudySessionByIdResult(id: number, options: UserAccessOptions = {}) {
+export function fetchStudySessionByIdResult(id: UUID, options: UserAccessOptions = {}) {
   return ResultAsync.fromPromise(
     queryPayloadStudySessionById(id, options),
     handleRepositoryError(StudySession.slug, id),
@@ -155,7 +156,7 @@ export type PayloadLockedQuestionVersionForService = Awaited<
 >
 
 function relationshipId(value: PayloadStudySessionForService['questions'][number]['question']) {
-  if (typeof value === 'number') {
+  if (typeof value === 'number' || typeof value === 'string') {
     return value
   }
 

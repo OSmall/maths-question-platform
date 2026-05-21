@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'bun:test'
 
 import { renderableQuestionSchema } from '@/lib/domain/question'
+import { parseUUID } from '@/lib/domain/uuid'
+
+const questionId = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a30')
 
 const emptyRichText = {
   root: {
@@ -118,7 +121,7 @@ function createQuestion(overrides?: {
 }) {
   return {
     index: 1,
-    id: 1,
+    id: questionId,
     version: 'version-1',
     prompt: overrides?.prompt ?? nonEmptyRichText,
     subTopics: [],

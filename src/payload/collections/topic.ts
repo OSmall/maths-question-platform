@@ -30,7 +30,7 @@ export const Topic: CollectionConfig = {
       type: 'text',
       required: true,
       validate: async (
-        value: null | string | undefined,
+        value: unknown,
         options: { id?: number | string; req: PayloadRequest },
       ) => {
         if (typeof value !== 'string' || value.trim().length === 0) {
@@ -38,7 +38,7 @@ export const Topic: CollectionConfig = {
         }
 
         return validateUniqueTopicName({
-          id: options.id,
+          id: typeof options.id === 'string' ? options.id : undefined,
           name: value,
           req: options.req,
         })

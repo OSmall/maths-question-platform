@@ -96,7 +96,7 @@ export interface Config {
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: number;
+    defaultIDType: string;
   };
   fallbackLocale: null;
   globals: {};
@@ -134,7 +134,7 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: number;
+  id: string;
   /**
    * Optional frontend/admin roles. Users may have zero, one, or multiple roles.
    */
@@ -163,7 +163,7 @@ export interface User {
  * via the `definition` "media".
  */
 export interface Media {
-  id: number;
+  id: string;
   alt: string;
   updatedAt: string;
   createdAt: string;
@@ -184,7 +184,7 @@ export interface Media {
  * via the `definition` "topic".
  */
 export interface Topic {
-  id: number;
+  id: string;
   name: string;
   updatedAt: string;
   createdAt: string;
@@ -196,9 +196,9 @@ export interface Topic {
  * via the `definition` "subTopic".
  */
 export interface SubTopic {
-  id: number;
+  id: string;
   name: string;
-  topic: number | Topic;
+  topic: string | Topic;
   updatedAt: string;
   createdAt: string;
 }
@@ -209,7 +209,7 @@ export interface SubTopic {
  * via the `definition` "syllabus".
  */
 export interface Syllabus {
-  id: number;
+  id: string;
   name: string;
   updatedAt: string;
   createdAt: string;
@@ -221,9 +221,9 @@ export interface Syllabus {
  * via the `definition` "syllabusSubTopic".
  */
 export interface SyllabusSubTopic {
-  id: number;
-  syllabus: number | Syllabus;
-  subTopic: number | SubTopic;
+  id: string;
+  syllabus: string | Syllabus;
+  subTopic: string | SubTopic;
   status: 'included' | 'assumedKnowledge';
   updatedAt: string;
   createdAt: string;
@@ -233,7 +233,7 @@ export interface SyllabusSubTopic {
  * via the `definition` "question".
  */
 export interface Question {
-  id: number;
+  id: string;
   /**
    * Use this for the full prompt on single-part questions, or shared context that sits above all parts on multipart questions.
    */
@@ -322,7 +322,7 @@ export interface Question {
           /**
            * Optional supporting subtopics used for filtering or analytics. These are not shown directly to students.
            */
-          subTopics?: (number | SubTopic)[] | null;
+          subTopics?: (string | SubTopic)[] | null;
           id?: string | null;
         }[]
       | null;
@@ -331,7 +331,7 @@ export interface Question {
   /**
    * Optional question-level subtopics. Learner-facing taxonomy is derived from these tags only.
    */
-  subTopics?: (number | SubTopic)[] | null;
+  subTopics?: (string | SubTopic)[] | null;
   updatedAt: string;
   createdAt: string;
   _status?: ('draft' | 'published') | null;
@@ -343,13 +343,13 @@ export interface Question {
  * via the `definition` "studySession".
  */
 export interface StudySession {
-  id: number;
-  user: number | User;
+  id: string;
+  user: string | User;
   state?: ('notStarted' | 'started' | 'finished') | null;
   begunAt?: string | null;
   endedAt?: string | null;
   questions: {
-    question: number | Question;
+    question: string | Question;
     questionVersionId?: string | null;
     status: 'notStarted' | 'skipped' | 'answered';
     flagged: boolean;
@@ -381,7 +381,7 @@ export interface StudySession {
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: number;
+  id: string;
   key: string;
   data:
     | {
@@ -398,44 +398,44 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: number;
+  id: string;
   document?:
     | ({
         relationTo: 'users';
-        value: number | User;
+        value: string | User;
       } | null)
     | ({
         relationTo: 'media';
-        value: number | Media;
+        value: string | Media;
       } | null)
     | ({
         relationTo: 'topic';
-        value: number | Topic;
+        value: string | Topic;
       } | null)
     | ({
         relationTo: 'subTopic';
-        value: number | SubTopic;
+        value: string | SubTopic;
       } | null)
     | ({
         relationTo: 'syllabus';
-        value: number | Syllabus;
+        value: string | Syllabus;
       } | null)
     | ({
         relationTo: 'syllabusSubTopic';
-        value: number | SyllabusSubTopic;
+        value: string | SyllabusSubTopic;
       } | null)
     | ({
         relationTo: 'question';
-        value: number | Question;
+        value: string | Question;
       } | null)
     | ({
         relationTo: 'studySession';
-        value: number | StudySession;
+        value: string | StudySession;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -445,10 +445,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: number;
+  id: string;
   user: {
     relationTo: 'users';
-    value: number | User;
+    value: string | User;
   };
   key?: string | null;
   value?:
@@ -468,7 +468,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: number;
+  id: string;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;

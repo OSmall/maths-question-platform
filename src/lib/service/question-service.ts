@@ -1,4 +1,5 @@
 import { queryPayloadForQuestionAttemptByIdAndDraftResult } from '@/lib/repository/question-repository'
+import type { UUID } from '@/lib/domain/uuid'
 import { ok } from 'neverthrow'
 import { payloadQuestionToAttemptCandidate } from '../data/question-mapper'
 import { QuestionNotRenderableError } from '../errors'
@@ -10,7 +11,7 @@ type GetQuestionByIdOptions = {
   shuffleKeyBase: string
 }
 
-export function getQuestionById(id: number, options: GetQuestionByIdOptions) {
+export function getQuestionById(id: UUID, options: GetQuestionByIdOptions) {
   const isDraft = options.draft ?? false
 
   return ok(id)

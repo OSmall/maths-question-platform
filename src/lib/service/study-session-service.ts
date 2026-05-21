@@ -10,6 +10,7 @@ import {
   renderableQuestionSubmissionEvaluationSchema,
 } from '@/lib/domain/question'
 import { studySessionSchema, type StudySession } from '@/lib/domain/study-session'
+import type { UUID } from '@/lib/domain/uuid'
 import {
   QuestionNotRenderableError,
   StudySessionQuestionAlreadyAnsweredError,
@@ -57,7 +58,7 @@ type QueryOptions = {
 }
 
 export function getStudySessionQuestionByIndex(
-  studySessionId: number,
+  studySessionId: UUID,
   questionIndex: number,
   options: QueryOptions = {},
 ) {
@@ -118,7 +119,7 @@ export function getStudySessionQuestionByIndex(
 }
 
 export function submitStudySessionQuestionAnswers(
-  studySessionId: number,
+  studySessionId: UUID,
   questionIndex: number,
   answers: readonly StudySessionAnswerSubmission[],
   options: MutationOptions = {},
@@ -187,7 +188,7 @@ export function submitStudySessionQuestionAnswers(
 }
 
 export function skipStudySessionQuestion(
-  studySessionId: number,
+  studySessionId: UUID,
   questionIndex: number,
   options: MutationOptions = {},
 ) {
@@ -243,7 +244,7 @@ export function skipStudySessionQuestion(
 }
 
 export function setStudySessionQuestionFlagged(
-  studySessionId: number,
+  studySessionId: UUID,
   questionIndex: number,
   flagged: boolean,
   options: QueryOptions = {},
@@ -270,7 +271,7 @@ export function setStudySessionQuestionFlagged(
   })
 }
 
-function fetchStudySessionForUser(studySessionId: number, options: QueryOptions | MutationOptions) {
+function fetchStudySessionForUser(studySessionId: UUID, options: QueryOptions | MutationOptions) {
   return options.user
     ? fetchStudySessionByIdResult(studySessionId, { user: options.user })
     : fetchStudySessionByIdResult(studySessionId)
@@ -302,7 +303,7 @@ function parsePayloadStudySession(
 }
 
 function buildPayloadAnswersFromSubmission(
-  studySessionId: number,
+  studySessionId: UUID,
   questionIndex: number,
   payloadQuestionVersion: PayloadLockedQuestionVersionForService,
   answers: readonly StudySessionAnswerSubmission[],
@@ -399,7 +400,7 @@ function buildPayloadAnswersFromSubmission(
 }
 
 function buildPayloadAnswer(
-  studySessionId: number,
+  studySessionId: UUID,
   questionIndex: number,
   partId: string,
   answer: StudySessionAnswerSubmission,

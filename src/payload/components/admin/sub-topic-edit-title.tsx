@@ -8,7 +8,7 @@ type TopicDocument = {
 
 type SubTopicDocument = {
   name?: string | null
-  topic?: number | TopicDocument | null
+  topic?: string | TopicDocument | null
 }
 
 export async function SubTopicEditTitle({ id, payload }: BeforeDocumentControlsServerProps) {
@@ -51,8 +51,8 @@ export async function SubTopicEditTitle({ id, payload }: BeforeDocumentControlsS
   )
 }
 
-function getTopicName(topic: number | TopicDocument | null | undefined) {
-  if (!topic || typeof topic === 'number') {
+function getTopicName(topic: string | TopicDocument | null | undefined) {
+  if (!topic || typeof topic === 'string') {
     return undefined
   }
 

@@ -14,6 +14,7 @@ import {
   type SyllabusMatrixColumn,
   type TopicCoverageGroup,
 } from '@/lib/syllabus-coverage/matrix'
+import type { UUID } from '@/lib/domain/uuid'
 
 type CoverageStateRecord = Record<string, SyllabusCoverageStatus>
 
@@ -39,7 +40,7 @@ export function SyllabusCoverageMatrix(props: Props) {
   const [baselineState, setBaselineState] = useState<CoverageStateRecord>(
     () => props.initialCoverageState,
   )
-  const [collapsedTopicIds, setCollapsedTopicIds] = useState<Set<number>>(new Set())
+  const [collapsedTopicIds, setCollapsedTopicIds] = useState<Set<string>>(new Set())
 
   const changedCells = useMemo(
     () =>
@@ -118,8 +119,8 @@ export function SyllabusCoverageMatrix(props: Props) {
   }, [hasUnsavedChanges])
 
   function updateCellStatus(
-    syllabusId: number,
-    subTopicId: number,
+    syllabusId: UUID,
+    subTopicId: UUID,
     status: SyllabusCoverageStatus,
   ) {
     setCoverageState((currentState) => {
@@ -148,7 +149,7 @@ export function SyllabusCoverageMatrix(props: Props) {
     setCoverageState(baselineState)
   }
 
-  function toggleTopic(topicId: number) {
+  function toggleTopic(topicId: string) {
     setCollapsedTopicIds((current) => {
       const next = new Set(current)
 
@@ -274,8 +275,8 @@ function FragmentTopicSection(props: {
   isCollapsed: boolean
   onToggle: () => void
   onUpdateCellStatus: (
-    syllabusId: number,
-    subTopicId: number,
+    syllabusId: UUID,
+    subTopicId: UUID,
     status: SyllabusCoverageStatus,
   ) => void
   syllabuses: SyllabusMatrixColumn[]

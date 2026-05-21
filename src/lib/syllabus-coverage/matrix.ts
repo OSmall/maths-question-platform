@@ -1,3 +1,5 @@
+import { uuidSchema, type UUID } from '@/lib/domain/uuid'
+
 export const syllabusCoverageStatusValues = ['excluded', 'included', 'assumedKnowledge'] as const
 
 export type SyllabusCoverageStatus = (typeof syllabusCoverageStatusValues)[number]
@@ -5,63 +7,63 @@ export type SyllabusCoverageStatus = (typeof syllabusCoverageStatusValues)[numbe
 export type PersistedSyllabusCoverageStatus = Exclude<SyllabusCoverageStatus, 'excluded'>
 
 export type MatrixTaxonomyRow = {
-  subTopicId: number
+  subTopicId: UUID
   subTopicName: string
-  topicId: number
+  topicId: UUID
   topicName: string
 }
 
 export type TopicCoverageGroup = {
-  topicId: number
+  topicId: UUID
   topicName: string
   subTopics: Array<{
-    subTopicId: number
+    subTopicId: UUID
     subTopicName: string
   }>
 }
 
 export type SyllabusMatrixColumn = {
-  id: number
+  id: UUID
   name: string
 }
 
 export type PersistedCoverageEntry = {
-  id: number
+  id: UUID
   status: PersistedSyllabusCoverageStatus
-  subTopicId: number
-  syllabusId: number
+  subTopicId: UUID
+  syllabusId: UUID
 }
 
-export type MatrixCellKey = `${number}:${number}`
+export type MatrixCellKey = `${string}:${string}`
 
 export type ChangedMatrixCell = {
   nextStatus: SyllabusCoverageStatus
   previousStatus: SyllabusCoverageStatus
-  subTopicId: number
-  syllabusId: number
+  subTopicId: UUID
+  syllabusId: UUID
 }
 
 export type CoverageMutationPlan = {
   create: Array<{
     status: PersistedSyllabusCoverageStatus
-    subTopicId: number
-    syllabusId: number
+    subTopicId: UUID
+    syllabusId: UUID
   }>
   delete: Array<{
-    id: number
+    id: UUID
   }>
   update: Array<{
-    id: number
+    id: UUID
     status: PersistedSyllabusCoverageStatus
   }>
 }
 
-export function buildMatrixCellKey(syllabusId: number, subTopicId: number): MatrixCellKey {
+export function buildMatrixCellKey(syllabusId: UUID, subTopicId: UUID): MatrixCellKey {
   return `${syllabusId}:${subTopicId}`
 }
 
 export function groupTaxonomyRows(rows: MatrixTaxonomyRow[]): TopicCoverageGroup[] {
-  const groups = new Map<number, TopicCoverageGroup>()
+  const groups = new Map<string, TopicCoverageGroup>()
 
   for (const row of [...rows].sort(compareTaxonomyRows)) {
     const existing = groups.get(row.topicId)
@@ -106,8 +108,8 @@ export function buildInitialCoverageState(entries: PersistedCoverageEntry[]) {
 
 export function getCellStatus(
   state: Map<MatrixCellKey, SyllabusCoverageStatus>,
-  syllabusId: number,
-  subTopicId: number,
+  syllabusId: UUID,
+  subTopicId: UUID,
 ): SyllabusCoverageStatus {
   return state.get(buildMatrixCellKey(syllabusId, subTopicId)) ?? 'excluded'
 }
@@ -127,7 +129,9 @@ export function diffCoverageStates(args: {
       continue
     }
 
-    const [syllabusId, subTopicId] = key.split(':').map(Number)
+    const [rawSyllabusId, rawSubTopicId] = key.split(':')
+    const syllabusId = uuidSchema.parse(rawSyllabusId)
+    const subTopicId = uuidSchema.parse(rawSubTopicId)
 
     changedCells.push({
       previousStatus,
@@ -139,10 +143,10 @@ export function diffCoverageStates(args: {
 
   return changedCells.sort((left, right) => {
     if (left.syllabusId !== right.syllabusId) {
-      return left.syllabusId - right.syllabusId
+      return left.syllabusId.localeCompare(right.syllabusId)
     }
 
-    return left.subTopicId - right.subTopicId
+    return left.subTopicId.localeCompare(right.subTopicId)
   })
 }
 

@@ -1,8 +1,7 @@
 type RelationshipValue =
-  | number
   | string
   | {
-      id?: number | string | null
+      id?: string | null
     }
   | null
   | undefined
@@ -45,7 +44,7 @@ export function validateStudySessionQuestionRelationship(value: unknown, data?: 
     : []
   const questionIds = questions
     .map((question) => extractRelationshipId(question.question))
-    .filter((id): id is number => typeof id === 'number')
+    .filter((id): id is string => typeof id === 'string')
 
   if (questionIds.filter((id) => id === questionId).length > 1) {
     return 'Study sessions cannot contain duplicate questions.'
@@ -55,7 +54,7 @@ export function validateStudySessionQuestionRelationship(value: unknown, data?: 
 }
 
 export type QuestionVersionForStudySession = {
-  id: number | string
+  id: string
   version?: {
     parts?:
       | Array<{
@@ -67,7 +66,7 @@ export type QuestionVersionForStudySession = {
 
 type NormalizeStudySessionInput = {
   data?: StudySessionInput
-  lockQuestionVersion: (questionId: number) => Promise<QuestionVersionForStudySession>
+  lockQuestionVersion: (questionId: string) => Promise<QuestionVersionForStudySession>
   now?: Date
   operation: 'create' | 'update'
   originalDoc?: StudySessionInput
@@ -147,14 +146,14 @@ export async function normalizeStudySessionInput({
 }
 
 export function extractRelationshipId(value: unknown) {
-  if (typeof value === 'number' || typeof value === 'string') {
-    return parsePositiveInteger(value)
+  if (typeof value === 'string') {
+    return value
   }
 
   if (value && typeof value === 'object' && 'id' in value) {
     const id = value.id
-    if (typeof id === 'number' || typeof id === 'string') {
-      return parsePositiveInteger(id)
+    if (typeof id === 'string') {
+      return id
     }
   }
 
@@ -249,14 +248,4 @@ function questionRelationshipChanged(
   }
 
   return extractRelationshipId(question.question) !== extractRelationshipId(originalQuestion.question)
-}
-
-function parsePositiveInteger(value: number | string) {
-  const parsed = typeof value === 'number' ? value : Number(value)
-
-  if (!Number.isInteger(parsed) || parsed <= 0) {
-    return undefined
-  }
-
-  return parsed
 }

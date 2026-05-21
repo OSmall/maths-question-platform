@@ -3,8 +3,11 @@ import type { SerializedEditorState } from '@payloadcms/richtext-lexical/lexical
 import { ResultAsync } from 'neverthrow'
 
 import type { PayloadQuestionForAttempt } from '@/lib/repository/question-repository'
+import { parseUUID } from '@/lib/domain/uuid'
 
-const queryPayloadForQuestionAttemptByIdAndDraftResult = mock((id: number, draft: boolean) =>
+const questionId = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a03')
+
+const queryPayloadForQuestionAttemptByIdAndDraftResult = mock((id: string, draft: boolean) =>
   ResultAsync.fromPromise(Promise.resolve(createPayloadQuestion(id, draft)), (error) => error as Error),
 )
 
@@ -20,16 +23,16 @@ describe('getQuestionById', () => {
   })
 
   it('passes the id and draft flag to the repository and applies the shuffle key base', async () => {
-    queryPayloadForQuestionAttemptByIdAndDraftResult.mockImplementationOnce((id: number, draft: boolean) =>
+    queryPayloadForQuestionAttemptByIdAndDraftResult.mockImplementationOnce((id: string, draft: boolean) =>
       ResultAsync.fromPromise(
         Promise.resolve(createPayloadQuestion(id, draft)),
         (error) => error as Error,
       ),
     )
 
-    const result = await getQuestionById(42, { draft: true, shuffleKeyBase: 'seed-123' })
+    const result = await getQuestionById(questionId, { draft: true, shuffleKeyBase: 'seed-123' })
 
-    expect(queryPayloadForQuestionAttemptByIdAndDraftResult).toHaveBeenCalledWith(42, true)
+    expect(queryPayloadForQuestionAttemptByIdAndDraftResult).toHaveBeenCalledWith(questionId, true)
     expect(result.isOk()).toBe(true)
 
     if (result.isErr()) {
@@ -37,9 +40,9 @@ describe('getQuestionById', () => {
     }
 
     expect(result.value).toEqual({
-      id: 42,
+      id: questionId,
       index: 1,
-      version: 'question-42',
+      version: `question-${questionId}`,
       shuffleKeyBase: 'seed-123',
       prompt: nonEmptyRichText,
       subTopics: [],
@@ -89,7 +92,7 @@ const nonEmptyRichText = {
   },
 } as unknown as SerializedEditorState
 
-function createPayloadQuestion(id: number, shuffle: boolean): PayloadQuestionForAttempt {
+function createPayloadQuestion(id: string, shuffle: boolean): PayloadQuestionForAttempt {
   return {
     id,
     prompt: nonEmptyRichText,

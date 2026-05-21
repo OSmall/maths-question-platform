@@ -96,17 +96,22 @@ test.describe('Frontend', () => {
   })
 
   test('redirects protected routes through login and honors the destination', async ({ page }) => {
-    await page.goto('/question/1')
+    const question = await createPublishedQuestion('multipleChoice')
+    const questionPath = `/question/${question.id}`
 
-    await expect(page).toHaveURL(/\/login\?redirect=%2Fquestion%2F1/)
+    await page.goto(questionPath)
+
+    await expect(page).toHaveURL(new RegExp(`/login\\?redirect=${encodeURIComponent(questionPath)}`))
     await page.getByLabel('Email').fill(adminEmail)
     await page.getByLabel('Password').fill(password)
     await page.getByRole('button', { name: 'Sign in' }).click()
 
-    await expect(page).toHaveURL(/\/question\/1(?:\?|$)/)
+    await expect(page).toHaveURL(new RegExp(`${questionPath}(?:\\?|$)`))
   })
 
   test('returns not found for authenticated users without the admin role', async ({ page }) => {
+    const question = await createPublishedQuestion('multipleChoice')
+
     await page.goto('/login')
     await page.getByLabel('Email').fill(studentEmail)
     await page.getByLabel('Password').fill(password)
@@ -114,7 +119,7 @@ test.describe('Frontend', () => {
 
     await expect(page).toHaveURL('/')
 
-    await page.goto('/question/1')
+    await page.goto(`/question/${question.id}`)
 
     await expect(page.getByRole('heading', { name: 'Question Not Found' })).toBeVisible()
   })
@@ -247,7 +252,7 @@ test.describe('Frontend', () => {
   })
 })
 
-function waitForStudySessionActionResponse(page: Page, sessionId: number) {
+function waitForStudySessionActionResponse(page: Page, sessionId: string) {
   return page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
@@ -359,7 +364,7 @@ async function prepareStableVisualViewport(page: Page) {
   await page.evaluate(() => window.scrollTo(0, 0))
 }
 
-async function stabilizeStudySessionTimer(sessionId: number) {
+async function stabilizeStudySessionTimer(sessionId: string) {
   const payload = await getPayloadInstance()
 
   await payload.update({

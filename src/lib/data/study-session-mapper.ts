@@ -12,6 +12,7 @@ import type {
 } from '@/payload/payload-types'
 import { extractRelationshipId } from '@/payload/collections/study-session-utils'
 import { assertNever, toNonNullableOrThrow } from '@/lib/utils/types'
+import { parseUUID } from '@/lib/domain/uuid'
 
 type PayloadQuestionPart = PayloadQuestion['parts'][number]
 type PayloadQuestionResponse = PayloadQuestionPart['response'] | undefined
@@ -28,7 +29,7 @@ export function payloadStudySessionToDomainCandidate(
   payloadStudySession: PayloadStudySessionForMapper,
 ): StudySession {
   return {
-    id: payloadStudySession.id,
+    id: parseUUID(payloadStudySession.id),
     state: toNonNullableOrThrow(payloadStudySession.state),
     begunAt: payloadStudySession.begunAt ?? undefined,
     endedAt: payloadStudySession.endedAt ?? undefined,
@@ -52,7 +53,7 @@ export function payloadQuestionVersionToRenderableQuestionCandidate({
   const isMultipart = parts.length > 1
 
   return {
-    id: assertPayloadQuestionParentId(payloadQuestionVersion),
+    id: parseUUID(assertPayloadQuestionParentId(payloadQuestionVersion)),
     version: String(payloadQuestionVersion.id),
     index: questionNumber,
     prompt: payloadQuestion.prompt ?? undefined,
@@ -126,7 +127,7 @@ function payloadStudySessionQuestionToDomainCandidate(
   return {
     id: question.id ?? undefined,
     index,
-    questionId: extractRequiredRelationshipId(question.question, 'study session question'),
+    questionId: parseUUID(extractRequiredRelationshipId(question.question, 'study session question')),
     questionVersionId: toNonNullableOrThrow(question.questionVersionId),
     status: question.status,
     flagged: question.flagged,
@@ -299,16 +300,19 @@ function mapPayloadSubTopics(payloadSubTopics: PayloadQuestion['subTopics']) {
 }
 
 function mapPayloadSubTopic(payloadSubTopic: PayloadSubTopic | null | undefined) {
-  if (!payloadSubTopic || typeof payloadSubTopic === 'number') {
+  if (!payloadSubTopic || typeof payloadSubTopic === 'string') {
     return undefined
   }
 
-  if (!payloadSubTopic.topic || typeof payloadSubTopic.topic === 'number') {
+  if (
+    !payloadSubTopic.topic ||
+    typeof payloadSubTopic.topic === 'string'
+  ) {
     return undefined
   }
 
   return {
-    id: payloadSubTopic.id,
+    id: parseUUID(payloadSubTopic.id),
     subtopicName: payloadSubTopic.name,
     topicName: payloadSubTopic.topic.name,
   }

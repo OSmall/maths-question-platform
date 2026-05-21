@@ -5,6 +5,7 @@ import {
 } from '../domain/question'
 import { fetchQuestionEvaluationEnrichment, fetchQuestionPartResponseTypes, } from '../repository/question-repository'
 import { getSingleSearchParam } from '../utils/search-params'
+import type { UUID } from '../domain/uuid'
 import { assertNever, DistributiveOmit } from '../utils/types'
 import { parseToResult } from '../utils/validation'
 import * as R from 'remeda'
@@ -15,7 +16,7 @@ import * as R from 'remeda'
  * @param searchParams temporary - used for state before implementation of "StudySession"
  */
 export function getQuestionSubmissionEvaluation(
-  questionId: number,
+  questionId: UUID,
   searchParams: Record<string, string | string[] | undefined>,
   options: { draft?: boolean } = {},
 ) {
@@ -281,7 +282,7 @@ function countAnsweredQuestionParts(
 }
 
 function assertAllQuestionPartsAnswered(
-  questionId: number,
+  questionId: UUID,
   questionPartResponseTypes: Record<string, QuestionPartResponseType>,
   parsedAnswers: Record<string, string>,
 ) {

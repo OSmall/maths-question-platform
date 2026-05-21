@@ -6,7 +6,7 @@ type TopicInput = {
 
 type SubTopicInput = {
   name?: string | null
-  topic?: number | { id?: number | null } | null
+  topic?: string | { id?: string | null } | null
 }
 
 function normalizeTaxonomyName(value: string) {
@@ -17,12 +17,16 @@ function formatTaxonomyName(value: string) {
   return value.trim().replace(/\s+/g, ' ')
 }
 
-function extractRelationshipId(value: number | { id?: number | null } | null | undefined) {
-  if (typeof value === 'number') {
+function extractRelationshipId(value: string | { id?: string | null } | null | undefined) {
+  if (typeof value === 'string') {
     return value
   }
 
-  if (value && typeof value === 'object' && typeof value.id === 'number') {
+  if (
+    value &&
+    typeof value === 'object' &&
+    typeof value.id === 'string'
+  ) {
     return value.id
   }
 
@@ -34,7 +38,7 @@ export async function validateUniqueTopicName({
   name,
   req,
 }: {
-  id?: number | string
+  id?: string
   name: string | null | undefined
   req: PayloadRequest
 }) {
@@ -76,14 +80,14 @@ export async function validateUniqueSubTopicName({
   req,
   topic,
 }: {
-  id?: number | string
+  id?: string
   name: string | null | undefined
   req: PayloadRequest
   topic: SubTopicInput['topic']
 }) {
   const topicId = extractRelationshipId(topic)
 
-  if (!name || typeof topicId !== 'number') {
+  if (!name || typeof topicId !== 'string') {
     return true
   }
 

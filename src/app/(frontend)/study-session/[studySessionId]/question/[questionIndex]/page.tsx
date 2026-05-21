@@ -16,6 +16,7 @@ import {
   StudySessionQuestionIndexError,
   StudySessionUnsupportedStateError,
 } from '@/lib/errors'
+import { parseUUIDToResult } from '@/lib/domain/uuid'
 import { getStudySessionQuestionByIndex } from '@/lib/service/study-session-service'
 
 type StudySessionQuestionPageProps = {
@@ -27,17 +28,18 @@ type StudySessionQuestionPageProps = {
 
 export default async function StudySessionQuestionPage({ params }: StudySessionQuestionPageProps) {
   const { questionIndex, studySessionId } = await params
-  const studySessionIdNumber = parsePositiveInteger(studySessionId)
+  const studySessionIdResult = parseUUIDToResult(studySessionId)
   const questionNumber = parsePositiveInteger(questionIndex)
 
-  if (studySessionIdNumber == null || questionNumber == null) {
+  if (studySessionIdResult.isErr() || questionNumber == null) {
     notFound()
   }
+  const studySessionUUID = studySessionIdResult.value
 
-  const path = buildStudySessionQuestionPath(studySessionIdNumber, questionNumber)
+  const path = buildStudySessionQuestionPath(studySessionUUID, questionNumber)
   const user = await requireRole(path, USER_ROLES.student)
   const questionIndexZeroBased = questionNumber - 1
-  const result = await getStudySessionQuestionByIndex(studySessionIdNumber, questionIndexZeroBased, {
+  const result = await getStudySessionQuestionByIndex(studySessionUUID, questionIndexZeroBased, {
     user,
   })
 
@@ -46,7 +48,7 @@ export default async function StudySessionQuestionPage({ params }: StudySessionQ
       const nextQuestionNumber = questionNumber + 1
       const continueHref =
         nextQuestionNumber <= session.questionCount
-          ? buildStudySessionQuestionPath(studySessionIdNumber, nextQuestionNumber)
+          ? buildStudySessionQuestionPath(studySessionUUID, nextQuestionNumber)
           : undefined
       const isAnswered = studySessionQuestion.status === 'answered'
 
@@ -63,7 +65,7 @@ export default async function StudySessionQuestionPage({ params }: StudySessionQ
                   initialFlagged={studySessionQuestion.flagged}
                   questionNumber={questionNumber}
                   setFlaggedAction={setStudySessionQuestionFlaggedAction}
-                  studySessionId={studySessionIdNumber}
+                  studySessionId={studySessionUUID}
                 />
               }
               isDraftMode={false}
@@ -71,7 +73,7 @@ export default async function StudySessionQuestionPage({ params }: StudySessionQ
               question={question}
               questionSubmissionEvaluation={questionSubmissionEvaluation}
               routeFields={[
-                { name: 'studySessionId', value: studySessionIdNumber },
+                { name: 'studySessionId', value: studySessionUUID },
                 { name: 'questionNumber', value: questionNumber },
               ]}
               skipAction={skipStudySessionQuestionAction}

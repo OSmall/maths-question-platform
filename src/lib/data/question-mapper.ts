@@ -3,18 +3,19 @@ import type {
   Question as PayloadQuestion,
   SubTopic as PayloadSubTopicDocument,
 } from '@/payload/payload-types'
+import { parseUUID } from '@/lib/domain/uuid'
 import * as R from 'remeda'
 
 type PayloadQuestionPart = PayloadQuestion['parts'][number]
 type PayloadQuestionResponse = PayloadQuestionPart['response'] | undefined
-type PayloadSubTopic = (number | PayloadSubTopicDocument) | null | undefined
+type PayloadSubTopic = (string | PayloadSubTopicDocument) | null | undefined
 
 export function payloadQuestionToAttemptCandidate(payloadQuestion: PayloadQuestionForRender) {
   const parts = Array.isArray(payloadQuestion.parts) ? payloadQuestion.parts : []
   const isMultipart = parts.length > 1
 
   return {
-    id: payloadQuestion.id,
+    id: parseUUID(payloadQuestion.id),
     version: `question-${payloadQuestion.id}`,
     index: 1,
     prompt: payloadQuestion.prompt ?? undefined,
@@ -78,16 +79,19 @@ function mapPayloadSubTopics(payloadSubTopics: PayloadQuestionForRender['subTopi
 }
 
 function mapPayloadSubTopic(payloadSubTopic: PayloadSubTopic) {
-  if (!payloadSubTopic || typeof payloadSubTopic === 'number') {
+  if (!payloadSubTopic || typeof payloadSubTopic === 'string') {
     return undefined
   }
 
-  if (!payloadSubTopic.topic || typeof payloadSubTopic.topic === 'number') {
+  if (
+    !payloadSubTopic.topic ||
+    typeof payloadSubTopic.topic === 'string'
+  ) {
     return undefined
   }
 
   return {
-    id: payloadSubTopic.id,
+      id: parseUUID(payloadSubTopic.id),
     subtopicName: payloadSubTopic.name,
     topicName: payloadSubTopic.topic.name,
   }

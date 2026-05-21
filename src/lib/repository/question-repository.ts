@@ -2,6 +2,7 @@ import { ResultAsync } from 'neverthrow'
 import { getPayload } from 'payload'
 
 import { handleRepositoryError } from '@/lib/repository/repository-utils'
+import type { UUID } from '@/lib/domain/uuid'
 import { Question } from '@/payload/collections/question'
 import type { QuestionSelect } from '@/payload/payload-types'
 import config from '@payload-config'
@@ -33,7 +34,7 @@ const questionAttemptSelect = {
   },
 } as const satisfies QuestionSelect
 
-async function queryPayloadForQuestionAttemptByIdAndDraft(id: number, draft: boolean) {
+async function queryPayloadForQuestionAttemptByIdAndDraft(id: UUID, draft: boolean) {
   const payload = await getPayload({ config })
 
   return payload.findByID({
@@ -55,7 +56,7 @@ async function queryPayloadForQuestionAttemptByIdAndDraft(id: number, draft: boo
   })
 }
 
-export function queryPayloadForQuestionAttemptByIdAndDraftResult(id: number, draft = false) {
+export function queryPayloadForQuestionAttemptByIdAndDraftResult(id: UUID, draft = false) {
   return ResultAsync.fromPromise(
     queryPayloadForQuestionAttemptByIdAndDraft(id, draft),
     handleRepositoryError(Question.slug, id),
@@ -88,7 +89,7 @@ const questionReviewSelect = {
   },
 } as const satisfies QuestionSelect
 
-async function queryPayloadForQuestionReviewByIdAndDraft(id: number, draft: boolean) {
+async function queryPayloadForQuestionReviewByIdAndDraft(id: UUID, draft: boolean) {
   const payload = await getPayload({ config })
 
   return payload.findByID({
@@ -110,7 +111,7 @@ async function queryPayloadForQuestionReviewByIdAndDraft(id: number, draft: bool
   })
 }
 
-async function queryPayloadForQuestionPartTypes(id: number, draft: boolean) {
+async function queryPayloadForQuestionPartTypes(id: UUID, draft: boolean) {
   const payload = await getPayload({ config })
 
   return payload.findByID({
@@ -131,7 +132,7 @@ async function queryPayloadForQuestionPartTypes(id: number, draft: boolean) {
 /**
  * @returns object with keys partId and values part response type e.g. 'multipleChoice'
  */
-export function fetchQuestionPartResponseTypes(id: number, draft = false) {
+export function fetchQuestionPartResponseTypes(id: UUID, draft = false) {
   return ResultAsync.fromPromise(
     queryPayloadForQuestionPartTypes(id, draft),
     handleRepositoryError(Question.slug, id),
@@ -144,7 +145,7 @@ export function fetchQuestionPartResponseTypes(id: number, draft = false) {
   })
 }
 
-async function queryPayloadForQuestionEvaluationEnrichment(questionId: number, draft = false) {
+async function queryPayloadForQuestionEvaluationEnrichment(questionId: UUID, draft = false) {
   const payload = await getPayload({ config })
 
   return payload.findByID({
@@ -184,7 +185,7 @@ async function queryPayloadForQuestionEvaluationEnrichment(questionId: number, d
  * Will probably change when moving away from POC towards "StudySession"
  * @returns a candidate object ready to enrich the data from the user to make a full evaluation
  */
-export function fetchQuestionEvaluationEnrichment(questionId: number, draft = false) {
+export function fetchQuestionEvaluationEnrichment(questionId: UUID, draft = false) {
   return ResultAsync.fromPromise(
     queryPayloadForQuestionEvaluationEnrichment(questionId, draft),
     handleRepositoryError(Question.slug, questionId),

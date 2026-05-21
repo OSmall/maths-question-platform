@@ -57,10 +57,10 @@ Use `context.marker` in unique fields so smoke records are easy to identify. Sto
 The expected root Payload ID type is intentionally hardcoded in `scripts/payload-smoke.ts`:
 
 ```ts
-const expectedPayloadIdType = 'number'
+const expectedPayloadIdType = 'uuid'
 ```
 
-When the app intentionally migrates Payload IDs to UUIDs, change that constant to `'uuid'` in the same migration work. This keeps the ID-shape change explicit in the diff.
+If the app intentionally changes Payload ID strategy again, update that constant in the same migration work. This keeps the ID-shape change explicit in the diff.
 
 ## Vercel And Migrations
 

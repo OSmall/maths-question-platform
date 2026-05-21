@@ -8,7 +8,7 @@ type TopicRowData = {
 }
 
 type SubTopicRowData = {
-  topic?: number | TopicRowData | null
+  topic?: string | TopicRowData | null
 }
 
 export async function SubTopicNameCell({
@@ -49,13 +49,13 @@ export async function SubTopicNameCell({
 
 async function getTopicName(
   payload: DefaultServerCellComponentProps['payload'],
-  topic: number | TopicRowData | null | undefined,
+  topic: string | TopicRowData | null | undefined,
 ) {
   if (!topic) {
     return undefined
   }
 
-  if (typeof topic === 'number') {
+  if (typeof topic === 'string') {
     const topicDoc = await payload.findByID({
       collection: 'topic',
       id: topic,

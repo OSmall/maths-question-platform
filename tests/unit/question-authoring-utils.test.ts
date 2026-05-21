@@ -5,31 +5,36 @@ import {
   buildStarterQuestionDraftData,
   extractSubTopicIDs,
 } from '@/payload/components/admin/question-authoring-utils'
+import { parseUUID } from '@/lib/domain/uuid'
+
+const subTopicA = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a04')
+const subTopicB = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a05')
+const subTopicC = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a06')
 
 describe('question authoring utils', () => {
   it('extracts canonical subtopic ids from mixed relationship values', () => {
     expect(
-      extractSubTopicIDs([12, '18', { id: 4 }, { value: '9' }, { id: 4 }, { value: 'nope' }, null]),
-    ).toEqual([12, 18, 4, 9])
+      extractSubTopicIDs([12, subTopicA, { id: 4 }, { value: subTopicB }, { id: subTopicA }, { value: '' }, null]),
+    ).toEqual([subTopicA, subTopicB])
   })
 
   it('builds a blank draft payload with normalized subtopic ids', () => {
-    expect(buildBlankQuestionDraftData([5, 7, 5, 0])).toEqual({
+    expect(buildBlankQuestionDraftData([subTopicA, subTopicB, subTopicA])).toEqual({
       _status: 'draft',
-      subTopics: [5, 7],
+      subTopics: [subTopicA, subTopicB],
     })
   })
 
   it('builds a minimal starter draft payload when a blank draft is rejected', () => {
-    expect(buildStarterQuestionDraftData([3, 3])).toEqual({
+    expect(buildStarterQuestionDraftData([subTopicC, subTopicC])).toEqual({
       _status: 'draft',
       parts: [{}],
-      subTopics: [3],
+      subTopics: [subTopicC],
     })
   })
 
   it('omits subtopics when there are no valid ids to carry forward', () => {
-    expect(buildBlankQuestionDraftData([0, -2])).toEqual({
+    expect(buildBlankQuestionDraftData([])).toEqual({
       _status: 'draft',
     })
   })

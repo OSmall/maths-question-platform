@@ -11,8 +11,14 @@ import type {
   PayloadLockedQuestionVersionForService,
   PayloadStudySessionForService,
 } from '@/lib/repository/study-session-repository'
+import { parseUUID, randomUUIDv7 } from '@/lib/domain/uuid'
 
-const fetchStudySessionByIdResult = mock((id: number) =>
+const studySessionId = randomUUIDv7()
+const questionA = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a21')
+const questionB = parseUUID('018f5f53-5c65-7a29-9b8d-9f8f9b9f9a22')
+const questionAVersionId = `version-${questionA}`
+
+const fetchStudySessionByIdResult = mock((id: string) =>
   ResultAsync.fromPromise(
     Promise.resolve(createPayloadStudySession(id)),
     (error) => error as Error,
@@ -47,10 +53,10 @@ describe('study session service', () => {
   })
 
   it('loads a locked question version by session id and zero-based question index', async () => {
-    const result = await getStudySessionQuestionByIndex(123, 0)
+    const result = await getStudySessionQuestionByIndex(studySessionId, 0)
 
-    expect(fetchStudySessionByIdResult).toHaveBeenCalledWith(123)
-    expect(fetchLockedQuestionVersionByIdResult).toHaveBeenCalledWith('version-10')
+    expect(fetchStudySessionByIdResult).toHaveBeenCalledWith(studySessionId)
+    expect(fetchLockedQuestionVersionByIdResult).toHaveBeenCalledWith(questionAVersionId)
     expect(result.isOk()).toBe(true)
 
     if (result.isErr()) {
@@ -58,10 +64,10 @@ describe('study session service', () => {
     }
 
     expect(result.value.question).toMatchObject({
-      id: 10,
+      id: questionA,
       index: 1,
-      version: 'version-10',
-      shuffleKeyBase: '123:0:10',
+      version: questionAVersionId,
+      shuffleKeyBase: `${studySessionId}:0:${questionA}`,
     })
     expect(result.value.session.questionCount).toBe(1)
     expect(result.value.questionSubmissionEvaluation).toEqual({
@@ -79,7 +85,7 @@ describe('study session service', () => {
     const now = new Date('2026-05-04T10:11:12.000Z')
 
     const result = await submitStudySessionQuestionAnswers(
-      123,
+      studySessionId,
       0,
       [{ partId: 'part-1', type: 'multipleChoice', choiceId: 'choice-a' }],
       { now },
@@ -111,19 +117,22 @@ describe('study session service', () => {
 
   it('keeps the session started and clears stale endedAt on non-final submit', async () => {
     const now = new Date('2026-05-04T10:11:12.000Z')
-    fetchStudySessionByIdResult.mockImplementationOnce((id: number) =>
+    fetchStudySessionByIdResult.mockImplementationOnce((id: string) =>
       ResultAsync.fromPromise(
         Promise.resolve({
           ...createPayloadStudySession(id),
           endedAt: '2026-05-01T00:00:00.000Z',
-          questions: [createPayloadStudySessionQuestion(10), createPayloadStudySessionQuestion(11)],
+          questions: [
+            createPayloadStudySessionQuestion(questionA),
+            createPayloadStudySessionQuestion(questionB),
+          ],
         } satisfies PayloadStudySessionForService),
         (error) => error as Error,
       ),
     )
 
     const result = await submitStudySessionQuestionAnswers(
-      123,
+      studySessionId,
       0,
       [{ partId: 'part-1', type: 'multipleChoice', choiceId: 'choice-a' }],
       { now },
@@ -140,13 +149,13 @@ describe('study session service', () => {
     const skippedAt = '2026-05-04T09:30:00.000Z'
     const now = new Date('2026-05-04T10:11:12.000Z')
 
-    fetchStudySessionByIdResult.mockImplementationOnce((id: number) =>
+    fetchStudySessionByIdResult.mockImplementationOnce((id: string) =>
       ResultAsync.fromPromise(
         Promise.resolve({
           ...createPayloadStudySession(id),
           questions: [
             {
-              ...createPayloadStudySessionQuestion(10),
+              ...createPayloadStudySessionQuestion(questionA),
               status: 'skipped',
               skippedAt,
             },
@@ -157,7 +166,7 @@ describe('study session service', () => {
     )
 
     const result = await submitStudySessionQuestionAnswers(
-      123,
+      studySessionId,
       0,
       [{ partId: 'part-1', type: 'multipleChoice', choiceId: 'choice-a' }],
       { now },
@@ -175,7 +184,7 @@ describe('study session service', () => {
   it('persists skipped status and leaves the session started', async () => {
     const now = new Date('2026-05-04T10:11:12.000Z')
 
-    const result = await skipStudySessionQuestion(123, 0, { now })
+    const result = await skipStudySessionQuestion(studySessionId, 0, { now })
 
     expect(result.isOk()).toBe(true)
     const updatedSession = updateStudySessionResult.mock.calls[0]?.[0]
@@ -194,7 +203,7 @@ describe('study session service', () => {
   })
 
   it('sets the absolute flagged state', async () => {
-    const result = await setStudySessionQuestionFlagged(123, 0, true)
+    const result = await setStudySessionQuestionFlagged(studySessionId, 0, true)
 
     expect(result.isOk()).toBe(true)
     const updatedSession = updateStudySessionResult.mock.calls[0]?.[0]
@@ -202,7 +211,7 @@ describe('study session service', () => {
   })
 
   it('returns a business error for an out-of-range question index', async () => {
-    const result = await getStudySessionQuestionByIndex(123, 99)
+    const result = await getStudySessionQuestionByIndex(studySessionId, 99)
 
     expect(result.isErr()).toBe(true)
     if (result.isOk()) {
@@ -212,7 +221,7 @@ describe('study session service', () => {
   })
 
   it('returns a business error when submitting an already answered question', async () => {
-    fetchStudySessionByIdResult.mockImplementationOnce((id: number) =>
+    fetchStudySessionByIdResult.mockImplementationOnce((id: string) =>
       ResultAsync.fromPromise(
         Promise.resolve({
           ...createPayloadStudySession(id),
@@ -220,7 +229,7 @@ describe('study session service', () => {
           endedAt: '2026-05-04T10:11:12.000Z',
           questions: [
             {
-              ...createPayloadStudySessionQuestion(10),
+              ...createPayloadStudySessionQuestion(questionA),
               status: 'answered',
               answeredAt: '2026-05-04T10:11:12.000Z',
               answers: [
@@ -237,7 +246,7 @@ describe('study session service', () => {
       ),
     )
 
-    const result = await submitStudySessionQuestionAnswers(123, 0, [
+    const result = await submitStudySessionQuestionAnswers(studySessionId, 0, [
       { partId: 'part-1', type: 'multipleChoice', choiceId: 'choice-a' },
     ])
 
@@ -249,7 +258,7 @@ describe('study session service', () => {
   })
 
   it('returns a business error when required answers are missing', async () => {
-    const result = await submitStudySessionQuestionAnswers(123, 0, [])
+    const result = await submitStudySessionQuestionAnswers(studySessionId, 0, [])
 
     expect(result.isErr()).toBe(true)
     if (result.isOk()) {
@@ -266,7 +275,7 @@ describe('study session service', () => {
       ),
     )
 
-    const result = await submitStudySessionQuestionAnswers(123, 0, [
+    const result = await submitStudySessionQuestionAnswers(studySessionId, 0, [
       { partId: 'part-1', type: 'shortText', answer: '   ' },
     ])
 
@@ -308,18 +317,18 @@ const nonEmptyRichText = {
   },
 } as unknown as SerializedEditorState
 
-function createPayloadStudySession(id: number): PayloadStudySessionForService {
+function createPayloadStudySession(id: string): PayloadStudySessionForService {
   return {
     id,
     state: 'started',
     begunAt: '2026-05-04T09:00:00.000Z',
     endedAt: undefined,
-    questions: [createPayloadStudySessionQuestion(10)],
+    questions: [createPayloadStudySessionQuestion(questionA)],
   } satisfies PayloadStudySessionForService
 }
 
 function createPayloadStudySessionQuestion(
-  questionId: number,
+  questionId: string,
 ): PayloadStudySessionForService['questions'][number] {
   return {
     id: `row-${questionId}`,
@@ -337,7 +346,7 @@ function createPayloadQuestionVersion(
   id: string,
   responseType: 'multipleChoice' | 'shortText' = 'multipleChoice',
 ): PayloadLockedQuestionVersionForService {
-  const questionId = Number(id.replace('version-', ''))
+  const questionId = id.replace('version-', '')
 
   return {
     id,

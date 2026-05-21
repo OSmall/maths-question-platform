@@ -146,6 +146,7 @@ const responseField = {
       fields: [
         {
           name: 'choices',
+          dbName: 'mc_choices',
           type: 'array',
           minRows: 2,
           validate: (value) => validateMultipleChoiceChoices(value),
@@ -181,6 +182,7 @@ const responseField = {
       fields: [
         {
           name: 'acceptedAnswers',
+          dbName: 'short_answers',
           type: 'array',
           minRows: 1,
           validate: (value) => validateAcceptedAnswers(value),
@@ -217,10 +219,7 @@ export const Question: CollectionConfig = {
   },
   admin: {
     livePreview: {
-      url: ({ data }) =>
-        typeof data?.id === 'number'
-          ? `/api/draft?slug=${encodeURIComponent(`/question/${data.id}`)}`
-          : '',
+      url: ({ data }) => `/api/draft?slug=${encodeURIComponent(`/question/${data.id}`)}`
     },
     components: {
       edit: {
@@ -250,6 +249,7 @@ export const Question: CollectionConfig = {
     },
     {
       name: 'parts',
+      dbName: 'q_parts',
       type: 'array',
       admin: {
         description:
@@ -275,8 +275,9 @@ export const Question: CollectionConfig = {
             description: 'Choose how the learner responds to this part.',
           },
         },
-        {
-          name: 'workedSolutions',
+          {
+            name: 'workedSolutions',
+            dbName: 'solutions',
           type: 'array',
           admin: {
             description:

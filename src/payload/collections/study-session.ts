@@ -23,7 +23,7 @@ const showOnEdit = (_data: unknown, _siblingData: unknown, { operation }: { oper
 
 async function fetchLatestPublishedQuestionVersion(
   req: PayloadRequest,
-  questionId: number,
+  questionId: string,
 ): Promise<QuestionVersionForStudySession> {
   const versions = await req.payload.findVersions({
     collection: 'question',
