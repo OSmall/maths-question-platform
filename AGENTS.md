@@ -4,6 +4,29 @@
 
 - For meaningful code changes, run `bun run lint`, `bun run build`, and/or `bun run test`.
 - If UI or user flows change, run `bun run test:e2e`.
+- When behavior is unclear, start with the smallest documented behavior, confirm it with a focused test or inspection,
+  and build up from there. Do not assume third-party or framework behavior; check the official docs first, then verify
+  the observed shape in code before layering on broader integration tests.
+
+## Test Architecture
+
+- Unit tests live under `tests/unit` and run with `bun run test:unit`. They should keep business logic fast and isolated,
+  using mocked repositories or pure domain/service inputs rather than Payload or database state.
+- Integration tests live under `tests/int` and run with `bun run test:int`. They boot Payload against an in-memory PGlite
+  database through `tests/int/setup-int-test.ts`, apply the checked-in migrations, and exercise repository/service behavior
+  against real Payload collections and hooks.
+- End-to-end tests run with `bun run test:e2e`. They use Playwright against the Next.js app and should be reserved for UI
+  flows or cross-boundary behavior that cannot be covered reliably at the unit or integration level.
+- Integration tests use `@electric-sql/pglite-socket` as a lightweight Postgres substitute. PGlite is fundamentally
+  single-connection and the socket server defaults to one connection/no concurrency, while Payload's local Postgres adapter
+  uses a normal connection pool. Avoid concurrent integration-test database writes such as `Promise.all` around
+  `payload.create`/`payload.update`; create fixture data sequentially unless the test is specifically validating concurrency
+  against a real Postgres/Neon database.
+
+## Frontend Browser Access
+
+- Playwright MCP is available for interactive frontend inspection; before using it against the local app, check whether `http://localhost:3000` is reachable.
+- If the app is not running and browser access is needed, start it with `bun run dev` and wait for `localhost:3000` before navigating.
 
 ## Repo Context
 
@@ -20,6 +43,8 @@
 - For Payload schema or data-model changes, create a migration with `bun run migrate:create`.
   - When pushing a commit that contains these Payload changes, the preview deployment needs this migration created to
     deploy properly.
+  - Payload's automatic DB migration push is turned off in the local environment. When making a change to the schema,
+    run `bun run migrate`.
 
 ## Project Code Shape
 
@@ -32,6 +57,12 @@
   in tests.
 - The domain contains data types that are used for the business logic. Translation between the backend types and the
   domain types is done in mappers in the `data` folder. It is also ok to put them in the repsitory if small.
+- In project source, prefer object spread over `.extend()` when composing Zod object schemas.
+  Use plain shape objects or `Schema.shape` as appropriate.
+- Prefer Zod 4 top-level format validators such as `z.email()`, `z.uuid()`, and `z.iso.datetime()` over deprecated
+  string method validators.
+- Do not import Payload collection config into domain schemas just to avoid duplicated literals. Keep domain and Payload
+  schema layers separate.
 
 ## UI Philosophy
 
@@ -48,7 +79,8 @@
 - Keep services/domain canonical. After canonical data is fetched, server UI components may decide display concerns such
   as seeded ordering and SSR review rendering.
 - Prefer server actions for sending client data to the server.
-  - Always use `next-safe-action` to validate incoming data to server actions and business logic like auth.
+  - Always implement server actions through `next-safe-action`, including auth and no-input actions.
+  - Always use `next-safe-action` schemas to validate incoming data before server actions reach business logic.
 - All inputs to components should be pure data. No business logic, or inference should occur within a component. e.g. If
   a component needs to access the search params from a page, the component should handle the parsing of those params,
   the page should do that.

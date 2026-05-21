@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url'
 
 import config from '@payload-config'
 import { Button } from '@/components/ui/button'
+import { hasRole, USER_ROLES } from '@/lib/auth/roles'
 
 export default async function HomePage() {
   const headers = await getHeaders()
@@ -31,13 +32,15 @@ export default async function HomePage() {
           {user && `Welcome back, ${user.email}`}
         </h1>
         <div className="flex items-center gap-3">
-          <Button
-            variant="outline"
-            render={<Link href={payloadConfig.routes.admin} target="_blank" />}
-            nativeButton={false}
-          >
-            Go to admin panel
-          </Button>
+          {user && hasRole(user, USER_ROLES.admin) && (
+            <Button
+              variant="outline"
+              render={<Link href={payloadConfig.routes.admin} target="_blank" />}
+              nativeButton={false}
+            >
+              Go to admin panel
+            </Button>
+          )}
           <Button
             render={
               <a href="https://payloadcms.com/docs" target="_blank" rel="noopener noreferrer" />

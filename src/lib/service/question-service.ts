@@ -7,7 +7,7 @@ import { renderableQuestionSchema } from '../domain/question'
 
 type GetQuestionByIdOptions = {
   draft?: boolean
-  seed: string
+  shuffleKeyBase: string
 }
 
 export function getQuestionById(id: number, options: GetQuestionByIdOptions) {
@@ -18,7 +18,7 @@ export function getQuestionById(id: number, options: GetQuestionByIdOptions) {
     .map(payloadQuestionToAttemptCandidate)
     .map((question) => ({
       ...question,
-      seed: options.seed,
+      shuffleKeyBase: options.shuffleKeyBase,
     }))
     .andThen((candidateQuestion) =>
       parseToResult(renderableQuestionSchema, candidateQuestion).mapErr(

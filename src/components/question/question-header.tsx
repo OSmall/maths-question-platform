@@ -45,7 +45,7 @@ export const QuestionHeader = ({ isDraftMode, question, answeredParts }: Questio
           </span>
           <span className="inline-flex items-center gap-2">
             <NotebookPen className="size-4" />
-            {answeredParts} of {question.parts.length} parts touched
+            {answeredParts} of {question.parts.length} parts recorded
           </span>
         </div>
 

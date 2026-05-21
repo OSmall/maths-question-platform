@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useMemo, useSyncExternalStore } from 'react'
 import { useTheme } from 'next-themes'
 
 import { Button } from '@/components/ui/button'
@@ -22,13 +22,13 @@ function getModeLabel(mode: ThemeMode): string {
   return 'Follow system'
 }
 
+const subscribeToMount = () => () => undefined
+const getMountedSnapshot = () => true
+const getServerSnapshot = () => false
+
 export function ThemeModeCycleButton() {
   const { theme, setTheme } = useTheme()
-  const [mounted, setMounted] = useState(false)
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
+  const mounted = useSyncExternalStore(subscribeToMount, getMountedSnapshot, getServerSnapshot)
 
   const currentMode = useMemo<ThemeMode>(() => {
     if (!mounted) return 'system'

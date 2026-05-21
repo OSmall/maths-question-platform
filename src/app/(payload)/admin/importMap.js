@@ -27,7 +27,9 @@ import { BoldFeatureClient as BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864
 import { ItalicFeatureClient as ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864 } from '@payloadcms/richtext-lexical/client'
 import { QuestionSaveAndAddAnotherMenuItem as QuestionSaveAndAddAnotherMenuItem_2df6174b95cb686f5f28941954478705 } from '../../../payload/components/admin/question-save-and-add-another-menu-item'
 import { VercelBlobClientUploadHandler as VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e } from '@payloadcms/storage-vercel-blob/client'
+import { CollectionCards as CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1 } from '@payloadcms/next/rsc'
 
+/** @type import('payload').ImportMap */
 export const importMap = {
   "/components/admin/sub-topic-name-cell#SubTopicNameCell": SubTopicNameCell_e3eea0f68fa844a4681869ee24a62df6,
   "/components/admin/sub-topic-edit-title#SubTopicEditTitle": SubTopicEditTitle_ebe9b8d419736b5be74c0379aa8fc2cd,
@@ -57,5 +59,6 @@ export const importMap = {
   "@payloadcms/richtext-lexical/client#BoldFeatureClient": BoldFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "@payloadcms/richtext-lexical/client#ItalicFeatureClient": ItalicFeatureClient_e70f5e05f09f93e00b997edb1ef0c864,
   "/components/admin/question-save-and-add-another-menu-item#QuestionSaveAndAddAnotherMenuItem": QuestionSaveAndAddAnotherMenuItem_2df6174b95cb686f5f28941954478705,
-  "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e
+  "@payloadcms/storage-vercel-blob/client#VercelBlobClientUploadHandler": VercelBlobClientUploadHandler_16c82c5e25f430251a3e3ba57219ff4e,
+  "@payloadcms/next/rsc#CollectionCards": CollectionCards_f9c02e79a4aed9a3924487c0cd4cafb1
 }

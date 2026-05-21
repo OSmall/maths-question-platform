@@ -74,6 +74,7 @@ export interface Config {
     syllabus: Syllabus;
     syllabusSubTopic: SyllabusSubTopic;
     question: Question;
+    studySession: StudySession;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     syllabus: SyllabusSelect<false> | SyllabusSelect<true>;
     syllabusSubTopic: SyllabusSubTopicSelect<false> | SyllabusSubTopicSelect<true>;
     question: QuestionSelect<false> | QuestionSelect<true>;
+    studySession: StudySessionSelect<false> | StudySessionSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -100,9 +102,10 @@ export interface Config {
   globals: {};
   globalsSelect: {};
   locale: null;
-  user: User & {
-    collection: 'users';
+  widgets: {
+    collections: CollectionsWidget;
   };
+  user: User;
   jobs: {
     tasks: unknown;
     workflows: unknown;
@@ -132,6 +135,10 @@ export interface UserAuthOperations {
  */
 export interface User {
   id: number;
+  /**
+   * Optional frontend/admin roles. Users may have zero, one, or multiple roles.
+   */
+  roles?: ('admin' | 'student')[] | null;
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -149,6 +156,7 @@ export interface User {
       }[]
     | null;
   password?: string | null;
+  collection: 'users';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
@@ -329,6 +337,46 @@ export interface Question {
   _status?: ('draft' | 'published') | null;
 }
 /**
+ * Persisted student study sessions with locked question versions and answers.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "studySession".
+ */
+export interface StudySession {
+  id: number;
+  user: number | User;
+  state?: ('notStarted' | 'started' | 'finished') | null;
+  begunAt?: string | null;
+  endedAt?: string | null;
+  questions: {
+    question: number | Question;
+    questionVersionId?: string | null;
+    status: 'notStarted' | 'skipped' | 'answered';
+    flagged: boolean;
+    answeredAt?: string | null;
+    skippedAt?: string | null;
+    answers?:
+      | {
+          partId: string;
+          type: 'unanswered' | 'multipleChoice' | 'shortText' | 'selfReport';
+          multipleChoice?: {
+            choiceId?: string | null;
+          };
+          shortText?: {
+            answer?: string | null;
+          };
+          selfReport?: {
+            answer?: boolean | null;
+          };
+          id?: string | null;
+        }[]
+      | null;
+    id?: string | null;
+  }[];
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -379,6 +427,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'question';
         value: number | Question;
+      } | null)
+    | ({
+        relationTo: 'studySession';
+        value: number | StudySession;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -427,6 +479,7 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  roles?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -555,6 +608,51 @@ export interface QuestionSelect<T extends boolean = true> {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "studySession_select".
+ */
+export interface StudySessionSelect<T extends boolean = true> {
+  user?: T;
+  state?: T;
+  begunAt?: T;
+  endedAt?: T;
+  questions?:
+    | T
+    | {
+        question?: T;
+        questionVersionId?: T;
+        status?: T;
+        flagged?: T;
+        answeredAt?: T;
+        skippedAt?: T;
+        answers?:
+          | T
+          | {
+              partId?: T;
+              type?: T;
+              multipleChoice?:
+                | T
+                | {
+                    choiceId?: T;
+                  };
+              shortText?:
+                | T
+                | {
+                    answer?: T;
+                  };
+              selfReport?:
+                | T
+                | {
+                    answer?: T;
+                  };
+              id?: T;
+            };
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv_select".
  */
 export interface PayloadKvSelect<T extends boolean = true> {
@@ -592,6 +690,16 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "collections_widget".
+ */
+export interface CollectionsWidget {
+  data?: {
+    [k: string]: unknown;
+  };
+  width: 'full';
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

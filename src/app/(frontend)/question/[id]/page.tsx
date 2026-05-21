@@ -1,9 +1,13 @@
 import { RefreshRouteOnSave } from '@/components/live-preview/refresh-route-on-save'
+import { submitQuestionAnswersAction } from '@/app/actions/question-actions'
+import { PreviewQuestionFlagButton } from '@/components/question/question-flag-button'
 import { QuestionPreviewWarning } from '@/components/question/question-preview-warning'
 import { QuestionRenderer } from '@/components/question/question-renderer'
 import { QuestionNotRenderableError } from '@/lib/errors'
 import { getQuestionSubmissionEvaluation } from '@/lib/service/question-evaluation-service'
 import { getQuestionById } from '@/lib/service/question-service'
+import { USER_ROLES } from '@/lib/auth/roles'
+import { requireRole } from '@/lib/auth/protection'
 import { getSingleSearchParam } from '@/lib/utils/search-params'
 import { Result } from 'neverthrow'
 import { draftMode } from 'next/headers'
@@ -32,23 +36,32 @@ export default async function QuestionPage({
     notFound()
   }
 
-  const seed = getSingleSearchParam(resolvedSearchParams.seed)
-  if (!seed) {
-    const seededSearchParams = new URLSearchParams()
+  await requireRole(buildQuestionPath(id, resolvedSearchParams), USER_ROLES.admin)
+
+  const previewStudySessionId = getSingleSearchParam(resolvedSearchParams.previewStudySessionId)
+  const isFlagged = getSingleSearchParam(resolvedSearchParams.flagged) === '1'
+  const isSubmitted = getSingleSearchParam(resolvedSearchParams.submitted) === '1'
+  if (!previewStudySessionId || getSingleSearchParam(resolvedSearchParams.seed)) {
+    const previewSearchParams = new URLSearchParams()
 
     for (const [key, value] of Object.entries(resolvedSearchParams)) {
       if (Array.isArray(value)) {
-        value.forEach((entry) => seededSearchParams.append(key, entry))
+        value.forEach((entry) => previewSearchParams.append(key, entry))
       } else if (value != null) {
-        seededSearchParams.set(key, value)
+        previewSearchParams.set(key, value)
       }
     }
 
-    seededSearchParams.set('seed', crypto.randomUUID())
-    redirect(`/question/${id}?${seededSearchParams.toString()}`)
+    previewSearchParams.delete('seed')
+    previewSearchParams.set('previewStudySessionId', previewStudySessionId ?? crypto.randomUUID())
+    redirect(`/question/${id}?${previewSearchParams.toString()}`)
   }
 
-  const questionResult = await getQuestionById(questionId, { draft: isDraftMode, seed })
+  const shuffleKeyBase = `${previewStudySessionId}:0:${questionId}`
+  const questionResult = await getQuestionById(questionId, {
+    draft: isDraftMode,
+    shuffleKeyBase,
+  })
   const questionSubmissionEvaluationResult = await getQuestionSubmissionEvaluation(
     questionId,
     resolvedSearchParams,
@@ -61,9 +74,18 @@ export default async function QuestionPage({
         {isDraftMode && <RefreshRouteOnSave />}
         <div className="mx-auto flex w-full justify-center">
           <QuestionRenderer
+            flagControl={<PreviewQuestionFlagButton initialFlagged={isFlagged} />}
             isDraftMode={isDraftMode}
+            isQuestionFlagged={isFlagged}
             question={question}
             questionSubmissionEvaluation={questionSubmissionEvaluation}
+            routeFields={[
+              { name: 'questionId', value: question.id },
+              { name: 'previewStudySessionId', value: previewStudySessionId },
+              ...(isFlagged ? [{ name: 'flagged', value: '1' }] : []),
+            ]}
+            submitAction={submitQuestionAnswersAction}
+            timer={buildPreviewTimer(isSubmitted)}
           />
         </div>
       </div>
@@ -87,4 +109,24 @@ export default async function QuestionPage({
       notFound()
     },
   )
+}
+
+function buildPreviewTimer(isSubmitted: boolean) {
+  const now = new Date().toISOString()
+  return isSubmitted ? { begunAt: now, endedAt: now } : { begunAt: now }
+}
+
+function buildQuestionPath(id: string, searchParams: Record<string, string | string[] | undefined>) {
+  const serializedSearchParams = new URLSearchParams()
+
+  for (const [key, value] of Object.entries(searchParams)) {
+    if (Array.isArray(value)) {
+      value.forEach((entry) => serializedSearchParams.append(key, entry))
+    } else if (value != null) {
+      serializedSearchParams.set(key, value)
+    }
+  }
+
+  const queryString = serializedSearchParams.toString()
+  return queryString ? `/question/${id}?${queryString}` : `/question/${id}`
 }

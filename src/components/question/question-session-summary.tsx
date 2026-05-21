@@ -1,6 +1,7 @@
 import { Clock3, NotebookPen, Target } from 'lucide-react'
 
 import { answerTypeLabel } from '@/components/question/question-utils'
+import { QuestionTimer } from '@/components/question/question-timer'
 import { Badge } from '@/components/ui/badge'
 import type {
   RenderableQuestion,
@@ -9,21 +10,34 @@ import type {
 
 type QuestionSessionSummaryProps = {
   isDraftMode: boolean
+  isQuestionFlagged: boolean
   question: RenderableQuestion
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
+  timer?: {
+    begunAt?: string
+    endedAt?: string
+  }
 }
 
 export const QuestionSessionSummary = ({
   isDraftMode,
+  isQuestionFlagged,
   question,
   questionSubmissionEvaluation,
+  timer,
 }: QuestionSessionSummaryProps) => {
-  const completionPercent = 50
-  const answeredCount = 0
-  const flaggedCount = 0
-  const activeAccuracyLabel = 'active accuracy label'
+  const answeredCount = questionSubmissionEvaluation.answeredParts
+  const completionPercent = Math.round((answeredCount / question.parts.length) * 100)
+  const flaggedCount = isQuestionFlagged ? 1 : 0
+  const activeAccuracyLabel = questionSubmissionEvaluation.isEvaluated
+    ? `${questionSubmissionEvaluation.correctParts}/${question.parts.length}`
+    : 'Pending'
   const attemptLabel = 'Attempt #1'
-  const timeSpent = '7:21'
+  const reviewLabel = questionSubmissionEvaluation.isEvaluated
+    ? questionSubmissionEvaluation.incorrectParts > 0
+      ? 'Review'
+      : 'Complete'
+    : 'Pending'
 
   return (
     <>
@@ -70,9 +84,9 @@ export const QuestionSessionSummary = ({
           </div>
 
           <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
-            <CompactStat icon={Clock3} label="Time" value={timeSpent} />
-            <CompactStat icon={Target} label="Flagged" value={String(flaggedCount)} />
-            <CompactStat icon={NotebookPen} label="Review" value="Pending" />
+            <CompactStat label="Time" value={<QuestionTimer {...timer} />} />
+            <CompactStat label="Flagged" value={String(flaggedCount)} />
+            <CompactStat label="Review" value={reviewLabel} />
           </div>
         </div>
       </section>
@@ -121,7 +135,7 @@ export const QuestionSessionSummary = ({
 
             <div className="grid gap-2.5 text-sm">
               <RailMetric icon={Target} label="Accuracy" value={activeAccuracyLabel} />
-              <RailMetric icon={Clock3} label="Time spent" value={timeSpent} />
+              <RailMetric icon={Clock3} label="Time spent" value={<QuestionTimer {...timer} />} />
               <RailMetric icon={NotebookPen} label="Estimate" value="9 min" />
               <RailMetric icon={Target} label="Flagged" value={`${flaggedCount} marked`} />
             </div>
@@ -182,17 +196,17 @@ export const QuestionSessionSummary = ({
               Question parts
             </p>
             <div className="mt-3 space-y-2">
-              {question.parts.map((part, index) => (
+              {question.parts.map((part) => (
                 <a
                   className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/65 px-3 py-3 text-sm font-medium text-foreground transition-colors hover:bg-accent"
                   href={`#part-${part.id}`}
                   key={part.id}
                 >
                   <span className="flex size-8 items-center justify-center rounded-full bg-primary/10 font-semibold text-primary">
-                    {index + 1}
+                    {part.partNumber}
                   </span>
                   <div>
-                    <p>Part {index + 1}</p>
+                    <p>Part {part.partNumber}</p>
                     <p className="text-xs text-muted-foreground">
                       {answerTypeLabel(part.response.type)}
                     </p>
@@ -208,18 +222,15 @@ export const QuestionSessionSummary = ({
 }
 
 const CompactStat = ({
-  icon: Icon,
   label,
   value,
 }: {
-  icon: React.ComponentType<{ className?: string }>
   label: string
-  value: string
+  value: React.ReactNode
 }) => {
   return (
     <div className="rounded-2xl border border-border/70 bg-background/75 px-3 py-3">
       <div className="flex items-center gap-2 text-muted-foreground">
-        <Icon className="size-4" />
         <span className="text-[11px] font-semibold tracking-[0.14em] uppercase">{label}</span>
       </div>
       <p className="mt-2 text-sm font-semibold text-foreground">{value}</p>
@@ -234,7 +245,7 @@ const RailMetric = ({
 }: {
   icon: React.ComponentType<{ className?: string }>
   label: string
-  value: string
+  value: React.ReactNode
 }) => {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border/70 bg-background/70 px-3 py-3">

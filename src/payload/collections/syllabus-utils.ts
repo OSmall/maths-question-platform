@@ -10,6 +10,20 @@ type SyllabusSubTopicInput = {
   syllabus?: number | { id?: number | null } | null
 }
 
+type FindSyllabusSubTopics = (options: {
+  collection: 'syllabusSubTopic'
+  depth: 0
+  limit: number
+  pagination: false
+  req?: PayloadRequest
+}) => Promise<{ docs: unknown[] }>
+
+type SyllabusSubTopicValidationRequest = {
+  payload: {
+    find: FindSyllabusSubTopics
+  }
+}
+
 function extractRelationshipId(value: number | { id?: number | null } | null | undefined) {
   if (typeof value === 'number') {
     return value
@@ -44,7 +58,7 @@ export function normalizeSyllabusSubTopicInput(data: SyllabusSubTopicInput | nul
 
 export async function validateUniqueSyllabusSubTopic(args: {
   id?: number | string
-  req: PayloadRequest
+  req: SyllabusSubTopicValidationRequest
   subTopic: SyllabusSubTopicInput['subTopic']
   syllabus: SyllabusSubTopicInput['syllabus']
 }) {
@@ -55,12 +69,14 @@ export async function validateUniqueSyllabusSubTopic(args: {
     return true
   }
 
+  const req = isPayloadRequest(args.req) ? args.req : undefined
+
   const existingMappings = await args.req.payload.find({
-    collection: 'syllabusSubTopic' as never,
+    collection: 'syllabusSubTopic',
     depth: 0,
     limit: 1000,
     pagination: false,
-    req: args.req,
+    req,
   })
 
   const conflictingMapping = existingMappings.docs.find((mapping) => {
@@ -85,4 +101,8 @@ export async function validateUniqueSyllabusSubTopic(args: {
   }
 
   return true
+}
+
+function isPayloadRequest(req: SyllabusSubTopicValidationRequest | PayloadRequest): req is PayloadRequest {
+  return 'headers' in req
 }

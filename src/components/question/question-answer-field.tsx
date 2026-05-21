@@ -5,17 +5,19 @@ import type {
 import { cn } from '@/lib/utils'
 
 type QuestionAnswerFieldProps = {
+  fieldIndex: number
   questionPart: RenderableQuestionPart
   questionSubmissionEvaluation: RenderableQuestionSubmissionEvaluation
-  seed: string
+  shuffleKeyBase: string
 }
 
 export const QuestionAnswerField = ({
+  fieldIndex,
   questionPart,
   questionSubmissionEvaluation,
-  seed,
+  shuffleKeyBase,
 }: QuestionAnswerFieldProps) => {
-  const fieldName = `a.${questionPart.id}`
+  const valueFieldName = `answers.${fieldIndex}.value`
   const questionSubmissionEvaluationPart = questionSubmissionEvaluation.parts[questionPart.id]
   const isEvaluated = questionSubmissionEvaluation.isEvaluated
 
@@ -33,11 +35,16 @@ export const QuestionAnswerField = ({
         ) // todo think about improving this error handling or aligning the types such that the response types are equal
       const choiceObjs = Object.values(questionPart.response.choices)
       const displayedChoices = questionPart.response.shuffle
-        ? shuffleChoices(choiceObjs, `${seed}:${questionPart.id}`)
+        ? shuffleChoices(choiceObjs, `${shuffleKeyBase}:${questionPart.id}`)
         : choiceObjs
 
       return (
-        <div className="space-y-3">
+        <div className="flex flex-col gap-3">
+          <AnswerRowIdentityFields
+            fieldIndex={fieldIndex}
+            partId={questionPart.id}
+            type={questionPart.response.type}
+          />
           {displayedChoices.map((choice, index) => {
             const choiceId = `${questionPart.id}-${choice.id}`
             const isSelected = questionSubmissionEvaluationPart.givenChoiceId === choice.id
@@ -66,7 +73,8 @@ export const QuestionAnswerField = ({
                   defaultChecked={isSelected}
                   disabled={isEvaluated}
                   id={choiceId}
-                  name={fieldName}
+                  name={valueFieldName}
+                  required={!isEvaluated}
                   type="radio"
                   value={choice.id}
                 />
@@ -82,13 +90,21 @@ export const QuestionAnswerField = ({
           `Expected questionSubmissionEvaluationPart to be shortText but found ${questionSubmissionEvaluationPart.type}`,
         ) // todo think about improving this error handling or aligning the types such that the response types are equal
       return (
-        <textarea
-          className="min-h-32 w-full rounded-[1.3rem] border border-border/70 bg-background/85 px-4 py-3 text-base leading-7 text-foreground placeholder:text-muted-foreground focus:border-primary/45 focus:outline-none disabled:cursor-default disabled:opacity-85"
-          defaultValue={questionSubmissionEvaluationPart.givenResponse}
-          disabled={isEvaluated}
-          name={fieldName}
-          placeholder="Type your final answer"
-        />
+        <>
+          <AnswerRowIdentityFields
+            fieldIndex={fieldIndex}
+            partId={questionPart.id}
+            type={questionPart.response.type}
+          />
+          <textarea
+            className="min-h-32 w-full rounded-[1.3rem] border border-border/70 bg-background/85 px-4 py-3 text-base leading-7 text-foreground placeholder:text-muted-foreground focus:border-primary/45 focus:outline-none disabled:cursor-default disabled:opacity-85"
+            defaultValue={questionSubmissionEvaluationPart.givenResponse}
+            disabled={isEvaluated}
+            name={valueFieldName}
+            placeholder="Type your final answer"
+            required={!isEvaluated}
+          />
+        </>
       )
     case 'selfReport':
       if (questionSubmissionEvaluationPart.type !== 'selfReport')
@@ -97,6 +113,11 @@ export const QuestionAnswerField = ({
         ) // todo think about improving this error handling or aligning the types such that the response types are equal
       return (
         <div className="grid gap-3 sm:grid-cols-2">
+          <AnswerRowIdentityFields
+            fieldIndex={fieldIndex}
+            partId={questionPart.id}
+            type={questionPart.response.type}
+          />
           {[
             {
               description:
@@ -132,7 +153,8 @@ export const QuestionAnswerField = ({
                   defaultChecked={isSelected}
                   disabled={isEvaluated}
                   id={optionId}
-                  name={fieldName}
+                  name={valueFieldName}
+                  required={!isEvaluated}
                   type="radio"
                   value={option.value}
                 />
@@ -148,6 +170,23 @@ export const QuestionAnswerField = ({
     default:
       return null
   }
+}
+
+function AnswerRowIdentityFields({
+  fieldIndex,
+  partId,
+  type,
+}: {
+  fieldIndex: number
+  partId: string
+  type: RenderableQuestionPart['response']['type']
+}) {
+  return (
+    <>
+      <input name={`answers.${fieldIndex}.partId`} type="hidden" value={partId} />
+      <input name={`answers.${fieldIndex}.type`} type="hidden" value={type} />
+    </>
+  )
 }
 
 function shuffleChoices<T extends { id: string }>(choices: T[], seed: string) {

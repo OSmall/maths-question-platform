@@ -77,8 +77,8 @@ describe('renderableQuestionSchema prompt validation', () => {
       createQuestion({
         prompt: undefined,
         parts: [
-          createPart({ id: 'part-1', prompt: nonEmptyRichText }),
-          createPart({ id: 'part-2', prompt: nonEmptyRichText }),
+          createPart({ id: 'part-1', partNumber: 1, prompt: nonEmptyRichText }),
+          createPart({ id: 'part-2', partNumber: 2, prompt: nonEmptyRichText }),
         ],
       }),
     )
@@ -91,8 +91,8 @@ describe('renderableQuestionSchema prompt validation', () => {
       createQuestion({
         prompt: undefined,
         parts: [
-          createPart({ id: 'part-1', prompt: nonEmptyRichText }),
-          createPart({ id: 'part-2', prompt: emptyRichText }),
+          createPart({ id: 'part-1', partNumber: 1, prompt: nonEmptyRichText }),
+          createPart({ id: 'part-2', partNumber: 2, prompt: emptyRichText }),
         ],
       }),
     )
@@ -119,17 +119,22 @@ function createQuestion(overrides?: {
   return {
     index: 1,
     id: 1,
-    version: 1,
+    version: 'version-1',
     prompt: overrides?.prompt ?? nonEmptyRichText,
     subTopics: [],
-    seed: 'seed',
+    shuffleKeyBase: 'seed',
     parts: overrides?.parts ?? [createPart()],
   }
 }
 
-function createPart(overrides?: { id?: string; prompt?: typeof nonEmptyRichText | undefined }) {
+function createPart(overrides?: {
+  id?: string
+  partNumber?: number
+  prompt?: typeof nonEmptyRichText | undefined
+}) {
   return {
     id: overrides?.id ?? 'part-1',
+    partNumber: overrides?.partNumber ?? 1,
     prompt: overrides?.prompt,
     response: {
       type: 'selfReport' as const,

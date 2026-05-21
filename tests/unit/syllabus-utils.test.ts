@@ -19,7 +19,7 @@ describe('validateUniqueSyllabusSubTopic', () => {
         payload: {
           find,
         },
-      } as never,
+      },
       subTopic: 11,
       syllabus: 1,
     })
@@ -43,7 +43,7 @@ describe('validateUniqueSyllabusSubTopic', () => {
         payload: {
           find,
         },
-      } as never,
+      },
       subTopic: 11,
       syllabus: 2,
     })
@@ -68,7 +68,7 @@ describe('validateUniqueSyllabusSubTopic', () => {
         payload: {
           find,
         },
-      } as never,
+      },
       subTopic: 20,
       syllabus: 3,
     })

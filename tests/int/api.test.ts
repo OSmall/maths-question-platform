@@ -1,20 +1,37 @@
-import { getPayload, Payload } from 'payload'
+import { describe, expect, it } from 'bun:test'
+import { getPayload } from 'payload'
+
 import config from '@payload-config'
 
-import { beforeAll, describe, expect, it } from 'bun:test'
+describe('Payload integration environment', () => {
+  it(
+    'boots Payload against PGlite and can write through the Local API',
+    async () => {
+      const payload = await getPayload({ config })
+      const name = `Integration Topic ${crypto.randomUUID()}`
 
-let payload: Payload
+      const topic = await payload.create({
+        collection: 'topic',
+        data: {
+          name,
+        },
+      })
 
-describe.skip('API', () => {
-  beforeAll(async () => {
-    const payloadConfig = await config
-    payload = await getPayload({ config: payloadConfig })
-  })
+      const result = await payload.find({
+        collection: 'topic',
+        depth: 0,
+        limit: 1,
+        where: {
+          name: {
+            equals: name,
+          },
+        },
+      })
 
-  it('fetches users', async () => {
-    const users = await payload.find({
-      collection: 'users',
-    })
-    expect(users).toBeDefined()
-  })
+      expect(topic.name).toBe(name)
+      expect(result.docs).toHaveLength(1)
+      expect(result.docs[0]?.id).toBe(topic.id)
+    },
+    60_000,
+  )
 })

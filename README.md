@@ -8,6 +8,32 @@ This template can be deployed directly from our Cloud hosting and it will setup 
 
 ## Quick Start - local setup
 
+## Environment
+
+This project requires `APP_ENV` to be set explicitly. Vercel-managed runtime environments should use:
+
+```txt
+APP_ENV=local       # Vercel Development / local app runtime
+APP_ENV=preview     # Vercel Preview
+APP_ENV=production  # Vercel Production
+```
+
+Tests set their own values through package scripts:
+
+```txt
+APP_ENV=test              # unit tests
+APP_ENV=integration-test  # PGlite-backed integration tests
+```
+
+For real Neon/Payload migration validation, use the on-demand smoke test documented in
+[`docs/payload-smoke-tests.md`](docs/payload-smoke-tests.md).
+
+For local development, pull Vercel-managed variables into `.env.local`:
+
+```bash
+bunx vercel env pull .env.local --environment=development
+```
+
 To spin up this template locally, follow these steps:
 
 ### Clone
