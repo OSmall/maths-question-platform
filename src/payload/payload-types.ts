@@ -224,7 +224,7 @@ export interface SyllabusSubTopic {
   id: string;
   syllabus: string | Syllabus;
   subTopic: string | SubTopic;
-  status: 'included' | 'assumedKnowledge';
+  status: 'included' | 'assumedKnowledge' | 'optional';
   updatedAt: string;
   createdAt: string;
 }

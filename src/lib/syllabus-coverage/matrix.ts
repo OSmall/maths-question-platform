@@ -1,6 +1,6 @@
 import { uuidSchema, type UUID } from '@/lib/domain/uuid'
 
-export const syllabusCoverageStatusValues = ['excluded', 'included', 'assumedKnowledge'] as const
+export const syllabusCoverageStatusValues = ['excluded', 'included', 'assumedKnowledge', 'optional'] as const
 
 export type SyllabusCoverageStatus = (typeof syllabusCoverageStatusValues)[number]
 

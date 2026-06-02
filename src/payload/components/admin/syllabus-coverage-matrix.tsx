@@ -31,6 +31,7 @@ const controlOptions: Array<{ label: string; value: SyllabusCoverageStatus }> = 
   { label: 'Excl', value: 'excluded' },
   { label: 'Incl', value: 'included' },
   { label: 'Assumed', value: 'assumedKnowledge' },
+  { label: 'Opt', value: 'optional' },
 ]
 
 export function SyllabusCoverageMatrix(props: Props) {

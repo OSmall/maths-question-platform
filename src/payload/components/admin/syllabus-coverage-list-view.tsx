@@ -6,6 +6,7 @@ import {
   buildMatrixColumns,
   groupTaxonomyRows,
   type PersistedCoverageEntry,
+  type PersistedSyllabusCoverageStatus,
   type SyllabusMatrixColumn,
 } from '@/lib/syllabus-coverage/matrix'
 import { parseUUID } from '@/lib/domain/uuid'
@@ -98,7 +99,7 @@ export async function SyllabusCoverageListView(props: ListViewServerProps) {
     .map((doc) => {
       const candidate = doc as {
         id?: string
-        status?: 'assumedKnowledge' | 'included'
+        status?: PersistedSyllabusCoverageStatus
         subTopic?: string | { id?: string | null } | null
         syllabus?: string | { id?: string | null } | null
       }
@@ -110,7 +111,7 @@ export async function SyllabusCoverageListView(props: ListViewServerProps) {
         typeof candidate.id !== 'string' ||
         typeof subTopicId !== 'string' ||
         typeof syllabusId !== 'string' ||
-        (candidate.status !== 'included' && candidate.status !== 'assumedKnowledge')
+        !isPersistedCoverageStatus(candidate.status)
       ) {
         return null
       }
@@ -175,4 +176,8 @@ function extractRelationshipId(value: string | { id?: string | null } | null | u
   }
 
   return undefined
+}
+
+function isPersistedCoverageStatus(value: unknown): value is PersistedSyllabusCoverageStatus {
+  return value === 'included' || value === 'assumedKnowledge' || value === 'optional'
 }
