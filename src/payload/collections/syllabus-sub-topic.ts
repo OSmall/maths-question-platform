@@ -58,10 +58,7 @@ export const SyllabusSubTopic: CollectionConfig = {
         const relationshipValue =
           typeof value === 'string'
             ? value
-            : value &&
-                typeof value === 'object' &&
-                'id' in value &&
-                typeof value.id === 'string'
+            : value && typeof value === 'object' && 'id' in value && typeof value.id === 'string'
               ? value.id
               : undefined
 
@@ -69,8 +66,9 @@ export const SyllabusSubTopic: CollectionConfig = {
           id: typeof options.id === 'string' ? options.id : undefined,
           req: options.req,
           subTopic: relationshipValue,
-          syllabus: (options.data as { syllabus?: string | { id?: string | null } | null } | undefined)
-            ?.syllabus,
+          syllabus: (
+            options.data as { syllabus?: string | { id?: string | null } | null } | undefined
+          )?.syllabus,
         })
       },
     },
@@ -87,6 +85,10 @@ export const SyllabusSubTopic: CollectionConfig = {
         {
           label: 'Assumed knowledge',
           value: 'assumedKnowledge',
+        },
+        {
+          label: 'Optional',
+          value: 'optional',
         },
       ],
     },

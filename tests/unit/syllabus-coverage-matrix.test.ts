@@ -59,6 +59,7 @@ describe('syllabus coverage matrix helpers', () => {
     const currentState = new Map(initialState)
     currentState.set(buildMatrixCellKey(syllabusOne, subTopicFactorising), 'assumedKnowledge')
     currentState.set(buildMatrixCellKey(syllabusTwo, subTopicMedian), 'included')
+    currentState.set(buildMatrixCellKey(syllabusThree, subTopicMean), 'optional')
 
     const changedCells = diffCoverageStates({ currentState, initialState })
 
@@ -75,6 +76,12 @@ describe('syllabus coverage matrix helpers', () => {
         subTopicId: subTopicMedian,
         syllabusId: syllabusTwo,
       },
+      {
+        nextStatus: 'optional',
+        previousStatus: 'excluded',
+        subTopicId: subTopicMean,
+        syllabusId: syllabusThree,
+      },
     ])
   })
 
@@ -88,7 +95,7 @@ describe('syllabus coverage matrix helpers', () => {
           syllabusId: syllabusTwo,
         },
         {
-          nextStatus: 'assumedKnowledge',
+          nextStatus: 'optional',
           previousStatus: 'included',
           subTopicId: subTopicFactorising,
           syllabusId: syllabusOne,
@@ -128,7 +135,7 @@ describe('syllabus coverage matrix helpers', () => {
       update: [
         {
           id: coverageOne,
-          status: 'assumedKnowledge',
+          status: 'optional',
         },
       ],
     })

@@ -5,7 +5,7 @@ type SyllabusInput = {
 }
 
 type SyllabusSubTopicInput = {
-  status?: 'assumedKnowledge' | 'included' | null
+  status?: 'assumedKnowledge' | 'included' | 'optional' | null
   subTopic?: string | { id?: string | null } | null
   syllabus?: string | { id?: string | null } | null
 }

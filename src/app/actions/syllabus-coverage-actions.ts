@@ -10,7 +10,11 @@ import {
 } from 'payload'
 import { z } from 'zod'
 
-import { planCoverageMutations, syllabusCoverageStatusValues } from '@/lib/syllabus-coverage/matrix'
+import {
+  planCoverageMutations,
+  syllabusCoverageStatusValues,
+  type PersistedSyllabusCoverageStatus,
+} from '@/lib/syllabus-coverage/matrix'
 import { actionClient } from '@/lib/safe-action'
 import { parseUUID, uuidSchema } from '@/lib/domain/uuid'
 import config from '@payload-config'
@@ -56,7 +60,7 @@ export const saveSyllabusCoverageAction = actionClient
         .map((doc) => {
           const candidate = doc as {
             id?: string
-            status?: 'assumedKnowledge' | 'included'
+            status?: PersistedSyllabusCoverageStatus
             subTopic?: string | { id?: string | null } | null
             syllabus?: string | { id?: string | null } | null
           }
@@ -68,7 +72,7 @@ export const saveSyllabusCoverageAction = actionClient
             typeof candidate.id !== 'string' ||
             typeof syllabusId !== 'string' ||
             typeof subTopicId !== 'string' ||
-            (candidate.status !== 'included' && candidate.status !== 'assumedKnowledge')
+            !isPersistedCoverageStatus(candidate.status)
           ) {
             return null
           }
@@ -145,4 +149,8 @@ function extractRelationshipId(value: string | { id?: string | null } | null | u
   }
 
   return undefined
+}
+
+function isPersistedCoverageStatus(value: unknown): value is PersistedSyllabusCoverageStatus {
+  return value === 'included' || value === 'assumedKnowledge' || value === 'optional'
 }
